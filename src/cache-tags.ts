@@ -23,11 +23,11 @@ export function parseXCacheTagsResponseHeader(string?: null | string) {
  * Generates a unique query ID based on the query document and its variables.
  *
  * @param {DocumentNode} document Query document
- * @param {Record<string, unknown>} variables Query variables
+ * @param {TVariables} variables Query variables
  * @returns Unique query ID
  */
 
-export const generateQueryId = (document: DocumentNode, variables?: Record<string, unknown>): string => {
+export const generateQueryId = <TVariables = unknown>(document: DocumentNode, variables?: TVariables): string => {
   return createHash('sha1')
     .update(print(document))
     .update(JSON.stringify(variables) || '')
