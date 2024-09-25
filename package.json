@@ -1,0 +1,39 @@
+{
+  "name": "@smartive/datocms-utils",
+  "version": "1.0.0",
+  "description": "A set of utilities and helpers to work with DatoCMS in a Next.js project.",
+  "source": "src/index.ts",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "lint": "prettier --check src && eslint src",
+    "publish": "semantic-release"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "datocms"
+  ],
+  "author": "smartive AG",
+  "license": "MIT",
+  "devDependencies": {
+    "@semantic-release/changelog": "6.0.3",
+    "@semantic-release/commit-analyzer": "13.0.0",
+    "@semantic-release/gitlab": "13.2.1",
+    "@semantic-release/npm": "12.0.1",
+    "@semantic-release/release-notes-generator": "14.0.1",
+    "@smartive/eslint-config": "^5.1.0",
+    "@smartive/prettier-config": "^3.1.2",
+    "@types/node": "^22.7.0",
+    "eslint": "^8.57.0",
+    "prettier": "^3.3.3",
+    "semantic-release": "^24.1.1",
+    "typescript": "^5.6.2"
+  },
+  "dependencies": {
+    "@vercel/postgres": "^0.10.0",
+    "graphql": "^16.9.0"
+  }
+}
