@@ -5,16 +5,18 @@ A set of utilities and helpers to work with DatoCMS in a Next.js project.
 ## Installation
 
 ```bash
-npm install @smartive/dato-cms-utilities
+npm install @smartive/datocms-utils
 ```
 
 ## Usage
 
-Import and use the utilities you need in your project. The following utilities are available:
+Import and use the utilities you need in your project. The following utilities are available.
+
+## Utilities
 
 ### Utilities for DatoCMS Cache Tags
 
-The following utilities are used to work with DatoCMS cache tags and a Vercel Postgres database.
+The following utilities are used to work with [DatoCMS cache tags](https://www.datocms.com/docs/content-delivery-api/cache-tags) and a [Vercel Postgres database](https://vercel.com/docs/storage/vercel-postgres).
 
 - `storeQueryCacheTags`: Stores the cache tags of a query in the database.
 - `queriesReferencingCacheTags`: Retrieves the queries that reference cache tags.
