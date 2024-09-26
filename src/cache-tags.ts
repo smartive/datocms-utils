@@ -42,6 +42,10 @@ export const generateQueryId = <TVariables = unknown>(document: DocumentNode, va
  */
 
 export const storeQueryCacheTags = async (queryId: string, cacheTags: CacheTag[]) => {
+  if (!cacheTags?.length) {
+    return;
+  }
+
   await sql.query(
     `INSERT INTO query_cache_tags VALUES ${cacheTags.map((cacheTag) => `('${queryId}', '${cacheTag}')`).join()} ON CONFLICT DO NOTHING`,
   );
@@ -55,6 +59,9 @@ export const storeQueryCacheTags = async (queryId: string, cacheTags: CacheTag[]
  */
 
 export const queriesReferencingCacheTags = async (cacheTags: CacheTag[]): Promise<string[]> => {
+  if (!cacheTags?.length) {
+    return [];
+  }
   const { rows }: { rows: { query_id: string }[] } = await sql.query(
     `SELECT DISTINCT query_id FROM query_cache_tags WHERE cache_tag IN (${cacheTags.map((cacheTag) => `'${cacheTag}'`).join(', ')})`,
   );
@@ -69,5 +76,8 @@ export const queriesReferencingCacheTags = async (cacheTags: CacheTag[]): Promis
  */
 
 export const deleteQueries = async (queryIds: string[]) => {
+  if (!queryIds?.length) {
+    return;
+  }
   await sql.query(`DELETE FROM query_cache_tags WHERE query_id IN (${queryIds.map((id) => `'${id}'`).join(', ')})`);
 };
