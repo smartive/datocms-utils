@@ -37,3 +37,8 @@ CREATE TABLE IF NOT EXISTS query_cache_tags (
 ### Other Utilities
 
 - `classNames`: Cleans and joins an array of inputs with possible undefined or boolean values. Useful for tailwind classnames.
+
+### Types
+
+- `CacheTag`: A branded type for cache tags.
+- `CacheTagsInvalidateWebhook`: The payload of the DatoCMS cache tags invalidate webhook.
