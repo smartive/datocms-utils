@@ -62,8 +62,10 @@ export const queriesReferencingCacheTags = async (cacheTags: CacheTag[]): Promis
   if (!cacheTags?.length) {
     return [];
   }
+  const placeholders = cacheTags.map(() => '?').join(', ');
   const { rows }: { rows: { query_id: string }[] } = await sql.query(
-    `SELECT DISTINCT query_id FROM query_cache_tags WHERE cache_tag IN (${cacheTags.map((cacheTag) => `'${cacheTag}'`).join(', ')})`,
+    `SELECT DISTINCT query_id FROM query_cache_tags WHERE cache_tag IN (${placeholders})`,
+    cacheTags,
   );
 
   return rows.map((row) => row.query_id);
