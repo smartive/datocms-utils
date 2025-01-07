@@ -81,3 +81,11 @@ export const deleteQueries = async (queryIds: string[]) => {
   }
   await sql.query(`DELETE FROM query_cache_tags WHERE query_id IN (${queryIds.map((id) => `'${id}'`).join(', ')})`);
 };
+
+/**
+ * Wipes out all cache tags from the database.
+ */
+
+export async function truncateCacheTags() {
+  await sql.query('DELETE FROM query_cache_tags');
+}
