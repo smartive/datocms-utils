@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS query_cache_tags (
 ### Other Utilities
 
 - `classNames`: Cleans and joins an array of inputs with possible undefined or boolean values. Useful for tailwind classnames.
+- `getTelLink`: Formats a phone number to a tel link.
 
 ### Types
 
