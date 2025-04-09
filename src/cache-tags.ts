@@ -47,8 +47,6 @@ export const storeQueryCacheTags = async (queryId: string, cacheTags: CacheTag[]
     return;
   }
 
-  console.info(`Storing cache tags for query ${queryId}: ${cacheTags.join(', ')}`);
-
   const parameters = cacheTags.flatMap((_, i) => [queryId, cacheTags[i]]);
   const placeholders = cacheTags.map((_, i) => `($${2 * i + 1}, $${2 * i + 2})`).join(',');
 
