@@ -47,10 +47,10 @@ export const storeQueryCacheTags = async (queryId: string, cacheTags: CacheTag[]
     return;
   }
 
-  const parameters = cacheTags.flatMap((_, i) => [queryId, cacheTags[i]]);
+  const tags = cacheTags.flatMap((_, i) => [queryId, cacheTags[i]]);
   const placeholders = cacheTags.map((_, i) => `($${2 * i + 1}, $${2 * i + 2})`).join(',');
 
-  await sql.query(`INSERT INTO ${tableId} VALUES ${placeholders} ON CONFLICT DO NOTHING`, parameters);
+  await sql.query(`INSERT INTO ${tableId} VALUES ${placeholders} ON CONFLICT DO NOTHING`, tags);
 };
 
 /**
@@ -65,8 +65,12 @@ export const queriesReferencingCacheTags = async (cacheTags: CacheTag[], tableId
   if (!cacheTags?.length) {
     return [];
   }
+
+  const placeholders = cacheTags.map((_, i) => `$${i + 1}`).join(',');
+
   const { rows }: { rows: { query_id: string }[] } = await sql.query(
-    `SELECT DISTINCT query_id FROM ${tableId} WHERE cache_tag IN (${cacheTags.map((cacheTag) => `'${cacheTag}'`).join(', ')})`,
+    `SELECT DISTINCT query_id FROM ${tableId} WHERE cache_tag IN (${placeholders})`,
+    cacheTags,
   );
 
   return rows.map((row) => row.query_id);
@@ -83,7 +87,9 @@ export const deleteQueries = async (queryIds: string[], tableId: string) => {
   if (!queryIds?.length) {
     return;
   }
-  await sql.query(`DELETE FROM ${tableId} WHERE query_id IN (${queryIds.map((id) => `'${id}'`).join(', ')})`);
+  const placeholders = queryIds.map((_, i) => `$${i + 1}`).join(',');
+
+  await sql.query(`DELETE FROM ${tableId} WHERE query_id IN (${placeholders})`, queryIds);
 };
 
 /**
