@@ -39,31 +39,36 @@ export const generateQueryId = <TVariables = unknown>(document: DocumentNode, va
  *
  * @param {string} queryId Unique query ID
  * @param {CacheTag[]} cacheTags Array of cache tags
+ * @param {string} tableId Database table ID
  */
 
-export const storeQueryCacheTags = async (queryId: string, cacheTags: CacheTag[]) => {
+export const storeQueryCacheTags = async (queryId: string, cacheTags: CacheTag[], tableId: string) => {
   if (!cacheTags?.length) {
     return;
   }
 
-  await sql.query(
-    `INSERT INTO query_cache_tags VALUES ${cacheTags.map((cacheTag) => `('${queryId}', '${cacheTag}')`).join()} ON CONFLICT DO NOTHING`,
-  );
+  console.info(`Storing cache tags for query ${queryId}: ${cacheTags.join(', ')}`);
+
+  const parameters = cacheTags.flatMap((_, i) => [queryId, cacheTags[i]]);
+  const placeholders = cacheTags.map((_, i) => `($${2 * i + 1}, $${2 * i + 2})`).join(',');
+
+  await sql.query(`INSERT INTO ${tableId} VALUES ${placeholders} ON CONFLICT DO NOTHING`, parameters);
 };
 
 /**
  * Retrieves the queries that reference cache tags.
  *
  * @param {CacheTag[]} cacheTags Array of cache tags
+ * @param {string} tableId Database table ID
  * @returns Array of query IDs
  */
 
-export const queriesReferencingCacheTags = async (cacheTags: CacheTag[]): Promise<string[]> => {
+export const queriesReferencingCacheTags = async (cacheTags: CacheTag[], tableId: string): Promise<string[]> => {
   if (!cacheTags?.length) {
     return [];
   }
   const { rows }: { rows: { query_id: string }[] } = await sql.query(
-    `SELECT DISTINCT query_id FROM query_cache_tags WHERE cache_tag IN (${cacheTags.map((cacheTag) => `'${cacheTag}'`).join(', ')})`,
+    `SELECT DISTINCT query_id FROM ${tableId} WHERE cache_tag IN (${cacheTags.map((cacheTag) => `'${cacheTag}'`).join(', ')})`,
   );
 
   return rows.map((row) => row.query_id);
@@ -73,19 +78,22 @@ export const queriesReferencingCacheTags = async (cacheTags: CacheTag[]): Promis
  * Deletes the cache tags of a query from the database.
  *
  * @param {string} queryId Unique query ID
+ * @param {string} tableId Database table ID
  */
 
-export const deleteQueries = async (queryIds: string[]) => {
+export const deleteQueries = async (queryIds: string[], tableId: string) => {
   if (!queryIds?.length) {
     return;
   }
-  await sql.query(`DELETE FROM query_cache_tags WHERE query_id IN (${queryIds.map((id) => `'${id}'`).join(', ')})`);
+  await sql.query(`DELETE FROM ${tableId} WHERE query_id IN (${queryIds.map((id) => `'${id}'`).join(', ')})`);
 };
 
 /**
  * Wipes out all cache tags from the database.
+ *
+ * @param {string} tableId Database table ID
  */
 
-export async function truncateCacheTags() {
-  await sql.query('DELETE FROM query_cache_tags');
+export async function truncateCacheTags(tableId: string) {
+  await sql.query(`DELETE FROM ${tableId}`);
 }
