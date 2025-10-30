@@ -24,7 +24,7 @@
     "@semantic-release/gitlab": "^13.2.1",
     "@semantic-release/npm": "13.1.1",
     "@semantic-release/release-notes-generator": "14.1.0",
-    "@smartive/eslint-config": "^6.4.0",
+    "@smartive/eslint-config": "^7.0.0",
     "@smartive/prettier-config": "^3.1.2",
     "@types/node": "^24.0.0",
     "eslint": "^9.16.0",
