@@ -8,8 +8,7 @@
   "scripts": {
     "build": "tsc",
     "lint": "eslint src",
-    "prettier": "prettier --check src",
-    "publish": "semantic-release"
+    "prettier": "prettier --check src"
   },
   "publishConfig": {
     "access": "public"
@@ -26,7 +25,6 @@
     "eslint": "^9.39.1",
     "eslint-import-resolver-typescript": "^4.4.4",
     "prettier": "^3.3.3",
-    "semantic-release": "^25.0.0",
     "typescript": "^5.6.2"
   },
   "dependencies": {
