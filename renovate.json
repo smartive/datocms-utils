@@ -4,6 +4,7 @@
     "local>smartive/renovate-config",
     ":automergeRequireAllStatusChecks",
     ":automergeDisabled",
-    ":automergeStableNonMajor"
+    ":automergeStableNonMajor",
+    ":pinOnlyDevDependencies"
   ]
 }
