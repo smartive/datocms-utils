@@ -18,9 +18,9 @@ jobs:
       - run: npm ci
       - run: npm run build
       - name: semantic release
-        uses: cycjimmy/semantic-release-action@v4
+        uses: cycjimmy/semantic-release-action@v5
         with:
-          semantic_version: 19
+          semantic_version: 24
           extra_plugins: |
             @semantic-release/changelog@6
         env:
