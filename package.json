@@ -34,5 +34,10 @@
   },
   "peerDependencies": {
     "ioredis": "^5.4.1"
+  },
+  "peerDependenciesMeta": {
+    "ioredis": {
+      "optional": true
+    }
   }
 }

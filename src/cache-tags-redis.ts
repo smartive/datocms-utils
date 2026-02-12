@@ -87,7 +87,7 @@ export const deleteCacheTagsRedis = async (cacheTags: CacheTag[]): Promise<numbe
  */
 export const truncateCacheTagsRedis = async (): Promise<void> => {
   const redis = getRedis();
-  const pattern = keyPrefix ? `${keyPrefix}*` : '*';
+  const pattern = `${keyPrefix}*`;
   const keys = await redis.keys(pattern);
 
   if (keys.length > 0) {
