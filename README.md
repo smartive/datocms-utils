@@ -38,10 +38,10 @@ CREATE TABLE IF NOT EXISTS query_cache_tags (
 
 The following utilities provide Redis-based alternatives to the Postgres cache tags implementation above. They work with [DatoCMS cache tags](https://www.datocms.com/docs/content-delivery-api/cache-tags) and any Redis instance.
 
-- `storeQueryCacheTagsRedis`: Stores the cache tags of a query in Redis.
-- `queriesReferencingCacheTagsRedis`: Retrieves the queries that reference cache tags.
-- `deleteCacheTagsRedis`: Deletes cache tags from Redis.
-- `truncateCacheTagsRedis`: Wipes out all cache tags from Redis.
+- `redis.storeQueryCacheTags`: Stores the cache tags of a query in Redis.
+- `redis.queriesReferencingCacheTags`: Retrieves the queries that reference cache tags.
+- `redis.deleteCacheTags`: Deletes cache tags from Redis.
+- `redis.truncateCacheTags`: Wipes out all cache tags from Redis.
 
 The Redis connection is automatically initialized on first use using the `REDIS_URL` environment variable.
 
@@ -72,24 +72,19 @@ REDIS_KEY_PREFIX=preview     # For preview/staging
 #### Usage Example
 
 ```typescript
-import {
-  generateQueryId,
-  storeQueryCacheTagsRedis,
-  queriesReferencingCacheTagsRedis,
-  deleteCacheTagsRedis,
-} from '@smartive/datocms-utils';
+// Recommended: Use namespaces for clarity
+import { generateQueryId, redis } from '@smartive/datocms-utils';
 
-// Generate a unique query ID
 const queryId = generateQueryId(query, variables);
 
 // Store cache tags for a query
-await storeQueryCacheTagsRedis(queryId, ['item:42', 'product', 'category:5']);
+await redis.storeQueryCacheTags(queryId, ['item:42', 'product', 'category:5']);
 
 // Find all queries that reference specific tags
-const affectedQueries = await queriesReferencingCacheTagsRedis(['item:42']);
+const affectedQueries = await redis.queriesReferencingCacheTags(['item:42']);
 
 // Delete cache tags (keys will be recreated on next query)
-await deleteCacheTagsRedis(['item:42']);
+await redis.deleteCacheTags(['item:42']);
 ```
 
 #### Redis Data Structure

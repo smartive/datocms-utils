@@ -1,5 +1,5 @@
 import { Redis } from 'ioredis';
-import { CacheTag } from './types';
+import { type CacheTag } from './types';
 
 let redis: Redis | null = null;
 
@@ -24,7 +24,7 @@ const keyPrefix = process.env.REDIS_KEY_PREFIX ? `${process.env.REDIS_KEY_PREFIX
  * @param {CacheTag[]} cacheTags Array of cache tags
  *
  */
-export const storeQueryCacheTagsRedis = async (queryId: string, cacheTags: CacheTag[]): Promise<void> => {
+export const storeQueryCacheTags = async (queryId: string, cacheTags: CacheTag[]): Promise<void> => {
   if (!cacheTags?.length) {
     return;
   }
@@ -48,7 +48,7 @@ export const storeQueryCacheTagsRedis = async (queryId: string, cacheTags: Cache
  * @returns Array of unique query IDs
  *
  */
-export const queriesReferencingCacheTagsRedis = async (cacheTags: CacheTag[]): Promise<string[]> => {
+export const queriesReferencingCacheTags = async (cacheTags: CacheTag[]): Promise<string[]> => {
   if (!cacheTags?.length) {
     return [];
   }
@@ -69,7 +69,7 @@ export const queriesReferencingCacheTagsRedis = async (cacheTags: CacheTag[]): P
  * @returns Number of keys deleted, or null if there was an error
  *
  */
-export const deleteCacheTagsRedis = async (cacheTags: CacheTag[]): Promise<number> => {
+export const deleteCacheTags = async (cacheTags: CacheTag[]): Promise<number> => {
   if (!cacheTags?.length) {
     return 0;
   }
@@ -85,7 +85,7 @@ export const deleteCacheTagsRedis = async (cacheTags: CacheTag[]): Promise<numbe
  *
  * ⚠️ **Warning**: This will delete all cache tag data. Use with caution!
  */
-export const truncateCacheTagsRedis = async (): Promise<void> => {
+export const truncateCacheTags = async (): Promise<void> => {
   const redis = getRedis();
   const pattern = `${keyPrefix}*`;
   const keys = await redis.keys(pattern);
