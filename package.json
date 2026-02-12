@@ -25,10 +25,19 @@
     "eslint": "9.39.2",
     "eslint-import-resolver-typescript": "4.4.4",
     "prettier": "3.8.1",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "ioredis": "5.4.1"
   },
   "dependencies": {
     "@vercel/postgres": "^0.10.0",
     "graphql": "^16.9.0"
+  },
+  "peerDependencies": {
+    "ioredis": "^5.4.0"
+  },
+  "peerDependenciesMeta": {
+    "ioredis": {
+      "optional": true
+    }
   }
 }

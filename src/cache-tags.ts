@@ -1,31 +1,7 @@
 import { sql } from '@vercel/postgres';
-import { createHash } from 'crypto';
-import { type DocumentNode, print } from 'graphql';
 import { type CacheTag } from './types';
 
-/**
- * Converts the value of DatoCMS's `X-Cache-Tags` header into an array of strings typed as `CacheTag`.
- * For example, it transforms `'tag-a tag-2 other-tag'` into `['tag-a', 'tag-2', 'other-tag']`.
- *
- * @param string String value of the `X-Cache-Tags` header
- * @returns Array of strings typed as `CacheTag`
- */
-export const parseXCacheTagsResponseHeader = (string?: null | string) =>
-  (string?.split(' ') ?? []).map((tag) => tag as CacheTag);
-
-/**
- * Generates a unique query ID based on the query document and its variables.
- *
- * @param {DocumentNode} document Query document
- * @param {TVariables} variables Query variables
- * @returns Unique query ID
- */
-export const generateQueryId = <TVariables = unknown>(document: DocumentNode, variables?: TVariables): string => {
-  return createHash('sha1')
-    .update(print(document))
-    .update(JSON.stringify(variables) || '')
-    .digest('hex');
-};
+export { generateQueryId, parseXCacheTagsResponseHeader } from './utils';
 
 /**
  * Stores the cache tags of a query in the database.
@@ -68,10 +44,30 @@ export const queriesReferencingCacheTags = async (cacheTags: CacheTag[], tableId
 };
 
 /**
+ * Deletes the specified cache tags from the database.
+ *
+ * This removes the cache tag keys entirely. When queries are revalidated and
+ * run again, fresh cache tag mappings will be created.
+ *
+ * @param {CacheTag[]} cacheTags Array of cache tags to delete
+ * @param {string} tableId Database table ID
+ *
+ */
+export const deleteCacheTags = async (cacheTags: CacheTag[], tableId: string) => {
+  if (cacheTags.length === 0) {
+    return;
+  }
+  const placeholders = cacheTags.map((_, i) => `$${i + 1}`).join(',');
+
+  await sql.query(`DELETE FROM ${tableId} WHERE cache_tag IN (${placeholders})`, cacheTags);
+};
+
+/**
  * Deletes the cache tags of a query from the database.
  *
  * @param {string} queryId Unique query ID
  * @param {string} tableId Database table ID
+ * @deprecated Use `deleteCacheTags` instead.
  */
 export const deleteQueries = async (queryIds: string[], tableId: string) => {
   if (!queryIds?.length) {
