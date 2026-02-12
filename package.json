@@ -10,20 +10,6 @@
     "dist/**/*",
     "src/**/*"
   ],
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    },
-    "./redis": {
-      "types": "./dist/cache-tags-redis.d.ts",
-      "default": "./dist/cache-tags-redis.js"
-    },
-    "./postgres": {
-      "types": "./dist/cache-tags.d.ts",
-      "default": "./dist/cache-tags.js"
-    }
-  },
   "scripts": {
     "build": "tsc",
     "lint": "eslint src",
