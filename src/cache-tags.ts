@@ -67,6 +67,7 @@ export const deleteCacheTags = async (cacheTags: CacheTag[], tableId: string) =>
  *
  * @param {string} queryId Unique query ID
  * @param {string} tableId Database table ID
+ * @deprecated Use `deleteCacheTags` instead.
  */
 export const deleteQueries = async (queryIds: string[], tableId: string) => {
   if (!queryIds?.length) {
