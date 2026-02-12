@@ -18,6 +18,10 @@
   ],
   "author": "smartive AG",
   "license": "MIT",
+  "repository": {
+    "url": "https://github.com/smartive/datocms-utils",
+    "type": "git"
+  },
   "devDependencies": {
     "@smartive/eslint-config": "7.0.1",
     "@smartive/prettier-config": "3.1.2",
