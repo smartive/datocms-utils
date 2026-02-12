@@ -16,8 +16,8 @@
       "import": "./dist/cache-tags-redis.js"
     },
     "./postgres": {
-      "types": "./dist/cache-tags-postgres.d.ts",
-      "import": "./dist/cache-tags-postgres.js"
+      "types": "./dist/cache-tags.d.ts",
+      "import": "./dist/cache-tags.js"
     }
   },
   "scripts": {
