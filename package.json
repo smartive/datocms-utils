@@ -2,13 +2,24 @@
   "name": "@smartive/datocms-utils",
   "version": "1.0.0",
   "description": "A set of utilities and helpers to work with DatoCMS in a Next.js project.",
-  "source": "src/index.ts",
-  "main": "dist/index.js",
-  "exports": {
-    "redis": "./dist/cache-tags-redis.js",
-    "postgres": "./dist/cache-tags.js"
-  },
   "type": "module",
+  "source": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./redis": {
+      "types": "./dist/cache-tags-redis.d.ts",
+      "import": "./dist/cache-tags-redis.js"
+    },
+    "./postgres": {
+      "types": "./dist/cache-tags-postgres.d.ts",
+      "import": "./dist/cache-tags-postgres.js"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "lint": "eslint src",
