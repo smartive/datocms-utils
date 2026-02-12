@@ -1,19 +1,24 @@
 import { Redis } from 'ioredis';
 import { CacheTag } from './types';
 
-const redis = new Redis(process.env.REDIS_URL!, {
-  maxRetriesPerRequest: 3,
-  lazyConnect: true,
-});
+let redis: Redis | null = null;
+
+const getRedis = (): Redis => {
+  redis ??= new Redis(process.env.REDIS_URL!, {
+    maxRetriesPerRequest: 3,
+    lazyConnect: true,
+  });
+
+  return redis;
+};
 
 const keyPrefix = process.env.REDIS_KEY_PREFIX ? `${process.env.REDIS_KEY_PREFIX}:` : '';
 
 /**
- * Stores the cache tags of a query in Redis using a dual-index pattern.
+ * Stores the cache tags of a query in Redis.
  *
- * This function creates two types of Redis Sets for efficient lookups:
- * - Forward index: `{prefix}cache-tag:{tag}` → Set of query IDs (enables fast "which queries use this tag" lookups)
- * - Reverse index: `{prefix}query:{queryId}` → Set of tags (enables fast cleanup when deleting queries)
+ * For each cache tag, adds the query ID to a Redis Set. Sets are unordered
+ * collections of unique strings, perfect for tracking which queries use which tags.
  *
  * @param {string} queryId Unique query ID
  * @param {CacheTag[]} cacheTags Array of cache tags
@@ -24,13 +29,12 @@ export const storeQueryCacheTagsRedis = async (queryId: string, cacheTags: Cache
     return;
   }
 
+  const redis = getRedis();
   const pipeline = redis.pipeline();
 
   for (const tag of cacheTags) {
-    pipeline.sadd(`${keyPrefix}cache-tag:${tag}`, queryId);
+    pipeline.sadd(`${keyPrefix}${tag}`, queryId);
   }
-
-  pipeline.sadd(`${keyPrefix}query:${queryId}`, ...cacheTags);
 
   await pipeline.exec();
 };
@@ -49,74 +53,44 @@ export const queriesReferencingCacheTagsRedis = async (cacheTags: CacheTag[]): P
     return [];
   }
 
-  const keys = cacheTags.map((tag) => `${keyPrefix}cache-tag:${tag}`);
+  const redis = getRedis();
+  const keys = cacheTags.map((tag) => `${keyPrefix}${tag}`);
 
   return redis.sunion(...keys);
 };
 
 /**
- * Deletes the specified queries and their associated cache tag mappings from Redis.
+ * Deletes the specified cache tags from Redis.
  *
- * This function:
- * 1. Retrieves all tags associated with each query from the reverse index
- * 2. Removes the query ID from all cache tag sets (forward index)
- * 3. Deletes the reverse index entries for the queries
+ * This removes the cache tag keys entirely. When queries are revalidated and
+ * run again, fresh cache tag mappings will be created.
  *
- * @param {string[]} queryIds Array of query IDs to delete
+ * @param {CacheTag[]} cacheTags Array of cache tags to delete
+ * @returns Number of keys deleted, or null if there was an error
  *
  */
-export const deleteQueriesRedis = async (queryIds: string[]): Promise<void> => {
-  if (!queryIds?.length) {
-    return;
+export const deleteCacheTagsRedis = async (cacheTags: CacheTag[]): Promise<number> => {
+  if (!cacheTags?.length) {
+    return 0;
   }
 
-  const pipeline = redis.pipeline();
+  const redis = getRedis();
+  const keys = cacheTags.map((tag) => `${keyPrefix}${tag}`);
 
-  for (const queryId of queryIds) {
-    pipeline.smembers(`${keyPrefix}query:${queryId}`);
-  }
-
-  const results = await pipeline.exec();
-
-  if (!results) {
-    return;
-  }
-
-  // Build a new pipeline to delete all references
-  const deletePipeline = redis.pipeline();
-
-  queryIds.forEach((queryId, index) => {
-    const result = results[index];
-    if (result?.[1]) {
-      const tags = result[1] as string[];
-
-      for (const tag of tags) {
-        deletePipeline.srem(`${keyPrefix}cache-tag:${tag}`, queryId);
-      }
-    }
-
-    deletePipeline.del(`${keyPrefix}query:${queryId}`);
-  });
-
-  await deletePipeline.exec();
+  return redis.del(...keys);
 };
 
 /**
  * Wipes out all cache tags from Redis.
  *
- * This function deletes all keys matching the patterns:
- * - `{prefix}cache-tag:*` (forward index)
- * - `{prefix}query:*` (reverse index)
- *
  * ⚠️ **Warning**: This will delete all cache tag data. Use with caution!
  */
 export const truncateCacheTagsRedis = async (): Promise<void> => {
-  const cacheTagKeys = await redis.keys(`${keyPrefix}cache-tag:*`);
-  const queryKeys = await redis.keys(`${keyPrefix}query:*`);
+  const redis = getRedis();
+  const pattern = keyPrefix ? `${keyPrefix}*` : '*';
+  const keys = await redis.keys(pattern);
 
-  const allKeys = [...cacheTagKeys, ...queryKeys];
-
-  if (allKeys.length > 0) {
-    await redis.del(...allKeys);
+  if (keys.length > 0) {
+    await redis.del(...keys);
   }
 };

@@ -40,7 +40,7 @@ The following utilities provide Redis-based alternatives to the Postgres cache t
 
 - `storeQueryCacheTagsRedis`: Stores the cache tags of a query in Redis.
 - `queriesReferencingCacheTagsRedis`: Retrieves the queries that reference cache tags.
-- `deleteQueriesRedis`: Deletes the cache tags of a query from Redis.
+- `deleteCacheTagsRedis`: Deletes cache tags from Redis.
 - `truncateCacheTagsRedis`: Wipes out all cache tags from Redis.
 
 The Redis connection is automatically initialized on first use using the `REDIS_URL` environment variable.
@@ -72,7 +72,12 @@ REDIS_KEY_PREFIX=preview     # For preview/staging
 #### Usage Example
 
 ```typescript
-import { generateQueryId, storeQueryCacheTagsRedis, queriesReferencingCacheTagsRedis, deleteQueriesRedis } from '@smartive/datocms-utils';
+import {
+  generateQueryId,
+  storeQueryCacheTagsRedis,
+  queriesReferencingCacheTagsRedis,
+  deleteCacheTagsRedis,
+} from '@smartive/datocms-utils';
 
 // Generate a unique query ID
 const queryId = generateQueryId(query, variables);
@@ -83,20 +88,19 @@ await storeQueryCacheTagsRedis(queryId, ['item:42', 'product', 'category:5']);
 // Find all queries that reference specific tags
 const affectedQueries = await queriesReferencingCacheTagsRedis(['item:42']);
 
-// Delete queries and their cache tag mappings
-await deleteQueriesRedis(affectedQueries);
+// Delete cache tags (keys will be recreated on next query)
+await deleteCacheTagsRedis(['item:42']);
 ```
 
 #### Redis Data Structure
 
-The Redis implementation uses a dual-index pattern with Sets for efficient lookups:
+The Redis implementation uses Sets to track query-to-tag relationships:
 
-- **Forward index**: `{prefix}cache-tag:{tag}` → Set of query IDs (fast "which queries use this tag" lookups)
-- **Reverse index**: `{prefix}query:{queryId}` → Set of tags (fast cleanup when deleting queries)
+- **Cache tag keys**: `{prefix}{tag}` → Set of query IDs
 
 Where `{prefix}` is the optional `REDIS_KEY_PREFIX` environment variable (e.g., `prod:`, `preview:`).
 
-This provides O(1) lookup performance in both directions.
+When cache tags are invalidated, their keys are deleted entirely. Fresh mappings are created when queries run again.
 
 ### Other Utilities
 
