@@ -23,7 +23,7 @@
   "author": "smartive AG",
   "license": "MIT",
   "repository": {
-    "url": "https://github.com/smartive/datocms-utils",
+    "url": "git+https://github.com/smartive/datocms-utils.git",
     "type": "git"
   },
   "devDependencies": {
