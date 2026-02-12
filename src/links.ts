@@ -4,7 +4,6 @@
  * @param phoneNumber Phone number
  * @returns `tel:` link for the phone number
  */
-
 export const getTelLink = (phoneNumber: string): string => {
   if (typeof phoneNumber !== 'string') {
     throw new Error('Phone number must be a string.');

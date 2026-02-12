@@ -1,7 +1,7 @@
 import { sql } from '@vercel/postgres';
 import { createHash } from 'crypto';
-import { DocumentNode, print } from 'graphql';
-import { CacheTag } from './types';
+import { type DocumentNode, print } from 'graphql';
+import { type CacheTag } from './types';
 
 /**
  * Converts the value of DatoCMS's `X-Cache-Tags` header into an array of strings typed as `CacheTag`.
@@ -10,14 +10,8 @@ import { CacheTag } from './types';
  * @param string String value of the `X-Cache-Tags` header
  * @returns Array of strings typed as `CacheTag`
  */
-
-export function parseXCacheTagsResponseHeader(string?: null | string) {
-  if (!string) {
-    return [];
-  }
-
-  return (string.split(' ') || []).map((tag) => tag as CacheTag);
-}
+export const parseXCacheTagsResponseHeader = (string?: null | string) =>
+  (string?.split(' ') ?? []).map((tag) => tag as CacheTag);
 
 /**
  * Generates a unique query ID based on the query document and its variables.
@@ -26,7 +20,6 @@ export function parseXCacheTagsResponseHeader(string?: null | string) {
  * @param {TVariables} variables Query variables
  * @returns Unique query ID
  */
-
 export const generateQueryId = <TVariables = unknown>(document: DocumentNode, variables?: TVariables): string => {
   return createHash('sha1')
     .update(print(document))
@@ -41,7 +34,6 @@ export const generateQueryId = <TVariables = unknown>(document: DocumentNode, va
  * @param {CacheTag[]} cacheTags Array of cache tags
  * @param {string} tableId Database table ID
  */
-
 export const storeQueryCacheTags = async (queryId: string, cacheTags: CacheTag[], tableId: string) => {
   if (!cacheTags?.length) {
     return;
@@ -60,7 +52,6 @@ export const storeQueryCacheTags = async (queryId: string, cacheTags: CacheTag[]
  * @param {string} tableId Database table ID
  * @returns Array of query IDs
  */
-
 export const queriesReferencingCacheTags = async (cacheTags: CacheTag[], tableId: string): Promise<string[]> => {
   if (!cacheTags?.length) {
     return [];
@@ -82,7 +73,6 @@ export const queriesReferencingCacheTags = async (cacheTags: CacheTag[], tableId
  * @param {string} queryId Unique query ID
  * @param {string} tableId Database table ID
  */
-
 export const deleteQueries = async (queryIds: string[], tableId: string) => {
   if (!queryIds?.length) {
     return;
@@ -97,7 +87,6 @@ export const deleteQueries = async (queryIds: string[], tableId: string) => {
  *
  * @param {string} tableId Database table ID
  */
-
 export async function truncateCacheTags(tableId: string) {
   await sql.query(`DELETE FROM ${tableId}`);
 }
