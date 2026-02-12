@@ -4,6 +4,10 @@
   "description": "A set of utilities and helpers to work with DatoCMS in a Next.js project.",
   "source": "src/index.ts",
   "main": "dist/index.js",
+  "exports": {
+    "redis": "./dist/cache-tags-redis.js",
+    "postgres": "./dist/cache-tags.js"
+  },
   "type": "module",
   "scripts": {
     "build": "tsc",
