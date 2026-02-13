@@ -1,7 +1,26 @@
 import { Redis } from 'ioredis';
 import { type CacheTag, type CacheTagsStore } from '../types.js';
 
-export const createCacheTagsStore = ({ url, keyPrefix = '' }: { url: string; keyPrefix?: string }): CacheTagsStore => {
+type RedisCacheTagsStoreConfig = {
+  /**
+   * Redis connection string. For example, `redis://user:pass@host:port/db`.
+   */
+  readonly url: string;
+  /**
+   * Optional prefix for Redis keys. If provided, all keys used to store cache tags will be prefixed with this value.
+   * This can be useful to avoid key collisions if the same Redis instance is used for multiple purposes.
+   * For example, if you set `keyPrefix` to `'myapp:'`, a cache tag like `'tag1'` will be stored under the key `'myapp:tag1'`.
+   */
+  readonly keyPrefix?: string;
+};
+
+/**
+ * Creates a `CacheTagsStore` implementation using Redis as the storage backend.
+ *
+ * @param {RedisCacheTagsStoreConfig} config Configuration object containing the Redis connection string and optional key prefix.
+ * @returns An object implementing the `CacheTagsStore` interface, allowing you to store and manage cache tags in a Redis database.
+ */
+export const createCacheTagsStore = ({ url, keyPrefix = '' }: RedisCacheTagsStoreConfig): CacheTagsStore => {
   const redis = new Redis(url, {
     maxRetriesPerRequest: 3,
     lazyConnect: true,

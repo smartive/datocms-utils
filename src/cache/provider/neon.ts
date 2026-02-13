@@ -1,13 +1,33 @@
 import { neon } from '@neondatabase/serverless';
 import { type CacheTag, type CacheTagsStore } from '../types.js';
 
-export const createCacheTagsStore = ({
-  connectionString,
-  table,
-}: {
-  connectionString: string;
-  table: string;
-}): CacheTagsStore => {
+type NeonCacheTagsStoreConfig = {
+  /**
+   * Neon connection string. You can find it in the "Connection" tab of your Neon project dashboard.
+   * Has the format `postgresql://user:pass@host/db`
+   */
+  readonly connectionString: string;
+  /**
+   * Name of the table where cache tags will be stored. The table must have the following schema:
+   *
+   * ```sql
+   * CREATE TABLE your_table_name (
+   *   query_id TEXT NOT NULL,
+   *   cache_tag TEXT NOT NULL,
+   *   PRIMARY KEY (query_id, cache_tag)
+   * );
+   * ```
+   */
+  readonly table: string;
+};
+
+/**
+ * Creates a `CacheTagsStore` implementation using Neon as the storage backend. Neon is a serverless Postgres database service.
+ *
+ * @param {NeonCacheTagsStoreConfig} config Configuration object containing the Neon connection string and table name.
+ * @returns An object implementing the `CacheTagsStore` interface, allowing you to store and manage cache tags in a Neon database.
+ */
+export const createCacheTagsStore = ({ connectionString, table }: NeonCacheTagsStoreConfig): CacheTagsStore => {
   const sql = neon(connectionString, { fullResults: true });
 
   const storeQueryCacheTags = async (queryId: string, cacheTags: CacheTag[]) => {
