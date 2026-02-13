@@ -6,7 +6,7 @@ type NeonCacheTagsStoreConfig = {
    * Neon connection string. You can find it in the "Connection" tab of your Neon project dashboard.
    * Has the format `postgresql://user:pass@host/db`
    */
-  readonly connectionString: string;
+  readonly connectionUrl: string;
   /**
    * Name of the table where cache tags will be stored. The table must have the following schema:
    *
@@ -27,8 +27,8 @@ type NeonCacheTagsStoreConfig = {
  * @param {NeonCacheTagsStoreConfig} config Configuration object containing the Neon connection string and table name.
  * @returns An object implementing the `CacheTagsStore` interface, allowing you to store and manage cache tags in a Neon database.
  */
-export const createCacheTagsStore = ({ connectionString, table }: NeonCacheTagsStoreConfig): CacheTagsStore => {
-  const sql = neon(connectionString, { fullResults: true });
+export const createCacheTagsStore = ({ connectionUrl, table }: NeonCacheTagsStoreConfig): CacheTagsStore => {
+  const sql = neon(connectionUrl, { fullResults: true });
 
   const storeQueryCacheTags = async (queryId: string, cacheTags: CacheTag[]) => {
     if (!cacheTags?.length) {

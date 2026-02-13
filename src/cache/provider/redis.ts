@@ -5,7 +5,7 @@ type RedisCacheTagsStoreConfig = {
   /**
    * Redis connection string. For example, `redis://user:pass@host:port/db`.
    */
-  readonly url: string;
+  readonly connectionUrl: string;
   /**
    * Optional prefix for Redis keys. If provided, all keys used to store cache tags will be prefixed with this value.
    * This can be useful to avoid key collisions if the same Redis instance is used for multiple purposes.
@@ -20,8 +20,8 @@ type RedisCacheTagsStoreConfig = {
  * @param {RedisCacheTagsStoreConfig} config Configuration object containing the Redis connection string and optional key prefix.
  * @returns An object implementing the `CacheTagsStore` interface, allowing you to store and manage cache tags in a Redis database.
  */
-export const createCacheTagsStore = ({ url, keyPrefix = '' }: RedisCacheTagsStoreConfig): CacheTagsStore => {
-  const redis = new Redis(url, {
+export const createCacheTagsStore = ({ connectionUrl, keyPrefix = '' }: RedisCacheTagsStoreConfig): CacheTagsStore => {
+  const redis = new Redis(connectionUrl, {
     maxRetriesPerRequest: 3,
     lazyConnect: true,
   });
