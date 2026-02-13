@@ -20,6 +20,10 @@
     "./cache/neon": {
       "types": "./dist/cache/provider/neon.d.ts",
       "import": "./dist/cache/provider/neon.js"
+    },
+    "./cache/noop": {
+      "types": "./dist/cache/provider/noop.d.ts",
+      "import": "./dist/cache/provider/noop.js"
     }
   },
   "files": [
