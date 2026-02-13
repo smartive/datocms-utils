@@ -4,13 +4,23 @@
   "description": "A set of utilities and helpers to work with DatoCMS in a Next.js project.",
   "type": "module",
   "source": "./src/index.ts",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./cache": {
+      "types": "./dist/cache/index.d.ts",
+      "import": "./dist/cache/index.js"
+    }
+  },
   "files": [
     "dist/**/*",
     "src/**/*"
   ],
   "scripts": {
+    "clean": "rimraf dist",
+    "prebuild": "npm run clean",
     "build": "tsc",
     "lint": "eslint src",
     "prettier": "prettier --check src"
@@ -31,20 +41,27 @@
     "@smartive/eslint-config": "7.0.1",
     "@smartive/prettier-config": "3.1.2",
     "@types/node": "24.10.12",
+    "@vercel/postgres": "0.10.0",
     "eslint": "9.39.2",
     "eslint-import-resolver-typescript": "4.4.4",
+    "graphql": "16.12.0",
+    "ioredis": "5.9.2",
     "prettier": "3.8.1",
-    "typescript": "5.9.3",
-    "ioredis": "5.9.2"
-  },
-  "dependencies": {
-    "@vercel/postgres": "^0.10.0",
-    "graphql": "^16.9.0"
+    "rimraf": "6.1.2",
+    "typescript": "5.9.3"
   },
   "peerDependencies": {
+    "@vercel/postgres": "^0.10.0",
+    "graphql": "^15.0.0 || ^16.0.0",
     "ioredis": "^5.4.0"
   },
   "peerDependenciesMeta": {
+    "@vercel/postgres": {
+      "optional": true
+    },
+    "graphql": {
+      "optional": true
+    },
     "ioredis": {
       "optional": true
     }
