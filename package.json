@@ -12,6 +12,14 @@
     "./cache": {
       "types": "./dist/cache/index.d.ts",
       "import": "./dist/cache/index.js"
+    },
+    "./cache/redis": {
+      "types": "./dist/cache/provider/redis.d.ts",
+      "import": "./dist/cache/provider/redis.js"
+    },
+    "./cache/postgres": {
+      "types": "./dist/cache/provider/postgres.d.ts",
+      "import": "./dist/cache/provider/postgres.js"
     }
   },
   "files": [

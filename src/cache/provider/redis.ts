@@ -1,7 +1,7 @@
 import { Redis } from 'ioredis';
 import { type CacheTag, type CacheTagsStore } from '../types.js';
 
-export const createRedisCacheTagsStore = ({ url, keyPrefix = '' }: { url: string; keyPrefix?: string }): CacheTagsStore => {
+export const createCacheTagsStore = ({ url, keyPrefix = '' }: { url: string; keyPrefix?: string }): CacheTagsStore => {
   const redis = new Redis(url, {
     maxRetriesPerRequest: 3,
     lazyConnect: true,

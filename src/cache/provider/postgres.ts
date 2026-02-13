@@ -1,7 +1,7 @@
 import { sql } from '@vercel/postgres';
 import { type CacheTag, type CacheTagsStore } from '../types.js';
 
-export const createPostgresCacheTagsStore = ({ table }: { table: string }): CacheTagsStore => {
+export const createCacheTagsStore = ({ table }: { table: string }): CacheTagsStore => {
   const storeQueryCacheTags = async (queryId: string, cacheTags: CacheTag[]) => {
     if (!cacheTags?.length) {
       return;
