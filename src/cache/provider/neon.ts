@@ -1,5 +1,5 @@
 import { neon } from '@neondatabase/serverless';
-import { type CacheTag, type CacheTagsStore } from '../types.js';
+import { type CacheTag, type CacheTagsProvider } from '../types.js';
 
 type NeonCacheTagsStoreConfig = {
   /**
@@ -22,15 +22,18 @@ type NeonCacheTagsStoreConfig = {
 };
 
 /**
- * Creates a `CacheTagsStore` implementation using Neon as the storage backend. Neon is a serverless Postgres database service.
- *
- * @param {NeonCacheTagsStoreConfig} config Configuration object containing the Neon connection string and table name.
- * @returns An object implementing the `CacheTagsStore` interface, allowing you to store and manage cache tags in a Neon database.
+ * A `CacheTagsProvider` implementation that uses Neon as the storage backend.
  */
-export const createCacheTagsStore = ({ connectionUrl, table }: NeonCacheTagsStoreConfig): CacheTagsStore => {
-  const sql = neon(connectionUrl, { fullResults: true });
+export class NeonCacheTagsProvider implements CacheTagsProvider {
+  private readonly sql;
+  private readonly table;
 
-  const storeQueryCacheTags = async (queryId: string, cacheTags: CacheTag[]) => {
+  constructor({ connectionUrl, table }: NeonCacheTagsStoreConfig) {
+    this.sql = neon(connectionUrl, { fullResults: true });
+    this.table = table;
+  }
+
+  public async storeQueryCacheTags(queryId: string, cacheTags: CacheTag[]) {
     if (!cacheTags?.length) {
       return;
     }
@@ -38,18 +41,18 @@ export const createCacheTagsStore = ({ connectionUrl, table }: NeonCacheTagsStor
     const tags = cacheTags.flatMap((_, i) => [queryId, cacheTags[i]]);
     const placeholders = cacheTags.map((_, i) => `($${2 * i + 1}, $${2 * i + 2})`).join(',');
 
-    await sql.query(`INSERT INTO ${table} VALUES ${placeholders} ON CONFLICT DO NOTHING`, tags);
-  };
+    await this.sql.query(`INSERT INTO ${this.table} VALUES ${placeholders} ON CONFLICT DO NOTHING`, tags);
+  }
 
-  const queriesReferencingCacheTags = async (cacheTags: CacheTag[]): Promise<string[]> => {
+  public async queriesReferencingCacheTags(cacheTags: CacheTag[]): Promise<string[]> {
     if (!cacheTags?.length) {
       return [];
     }
 
     const placeholders = cacheTags.map((_, i) => `$${i + 1}`).join(',');
 
-    const { rows } = await sql.query(
-      `SELECT DISTINCT query_id FROM ${table} WHERE cache_tag IN (${placeholders})`,
+    const { rows } = await this.sql.query(
+      `SELECT DISTINCT query_id FROM ${this.table} WHERE cache_tag IN (${placeholders})`,
       cacheTags,
     );
 
@@ -60,23 +63,18 @@ export const createCacheTagsStore = ({ connectionUrl, table }: NeonCacheTagsStor
 
       return queryIds;
     }, []);
-  };
+  }
 
-  const deleteCacheTags = async (cacheTags: CacheTag[]) => {
+  public async deleteCacheTags(cacheTags: CacheTag[]) {
     if (cacheTags.length === 0) {
       return 0;
     }
     const placeholders = cacheTags.map((_, i) => `$${i + 1}`).join(',');
 
-    return (await sql.query(`DELETE FROM ${table} WHERE cache_tag IN (${placeholders})`, cacheTags)).rowCount ?? 0;
-  };
+    return (await this.sql.query(`DELETE FROM ${this.table} WHERE cache_tag IN (${placeholders})`, cacheTags)).rowCount ?? 0;
+  }
 
-  const truncateCacheTags = async () => (await sql.query(`DELETE FROM ${table}`)).rowCount ?? 0;
-
-  return {
-    storeQueryCacheTags,
-    queriesReferencingCacheTags,
-    deleteCacheTags,
-    truncateCacheTags,
-  };
-};
+  public async truncateCacheTags() {
+    return (await this.sql.query(`DELETE FROM ${this.table}`)).rowCount ?? 0;
+  }
+}

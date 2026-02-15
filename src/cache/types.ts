@@ -26,7 +26,7 @@ export type CacheTagsInvalidateWebhook = {
 /**
  * Configuration object for creating a `CacheTagsStore` implementation.
  */
-export type CacheTagsStore = {
+export interface CacheTagsProvider {
   /**
    * Stores the cache tags of a query.
    *
@@ -63,4 +63,4 @@ export type CacheTagsStore = {
    * ⚠️ **Warning**: This will delete all cache tag data. Use with caution!
    */
   truncateCacheTags(): Promise<number>;
-};
+}

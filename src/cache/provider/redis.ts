@@ -1,5 +1,5 @@
 import { Redis } from 'ioredis';
-import { type CacheTag, type CacheTagsStore } from '../types.js';
+import { type CacheTag, type CacheTagsProvider } from '../types.js';
 
 type RedisCacheTagsStoreConfig = {
   /**
@@ -15,66 +15,62 @@ type RedisCacheTagsStoreConfig = {
 };
 
 /**
- * Creates a `CacheTagsStore` implementation using Redis as the storage backend.
- *
- * @param {RedisCacheTagsStoreConfig} config Configuration object containing the Redis connection string and optional key prefix.
- * @returns An object implementing the `CacheTagsStore` interface, allowing you to store and manage cache tags in a Redis database.
+ * A `CacheTagsProvider` implementation that uses Redis as the storage backend.
  */
-export const createCacheTagsStore = ({ connectionUrl, keyPrefix = '' }: RedisCacheTagsStoreConfig): CacheTagsStore => {
-  const redis = new Redis(connectionUrl, {
-    maxRetriesPerRequest: 3,
-    lazyConnect: true,
-  });
+export class RedisCacheTagsProvider implements CacheTagsProvider {
+  private readonly redis;
+  private readonly keyPrefix;
 
-  const storeQueryCacheTags = async (queryId: string, cacheTags: CacheTag[]) => {
+  constructor({ connectionUrl, keyPrefix }: RedisCacheTagsStoreConfig) {
+    this.redis = new Redis(connectionUrl, {
+      maxRetriesPerRequest: 3,
+      lazyConnect: true,
+    });
+    this.keyPrefix = keyPrefix ?? '';
+  }
+
+  public async storeQueryCacheTags(queryId: string, cacheTags: CacheTag[]) {
     if (!cacheTags?.length) {
       return;
     }
 
-    const pipeline = redis.pipeline();
+    const pipeline = this.redis.pipeline();
 
     for (const tag of cacheTags) {
-      pipeline.sadd(`${keyPrefix}${tag}`, queryId);
+      pipeline.sadd(`${this.keyPrefix}${tag}`, queryId);
     }
 
     await pipeline.exec();
-  };
+  }
 
-  const queriesReferencingCacheTags = async (cacheTags: CacheTag[]) => {
+  public async queriesReferencingCacheTags(cacheTags: CacheTag[]) {
     if (!cacheTags?.length) {
       return [];
     }
 
-    const keys = cacheTags.map((tag) => `${keyPrefix}${tag}`);
+    const keys = cacheTags.map((tag) => `${this.keyPrefix}${tag}`);
 
-    return redis.sunion(...keys);
-  };
+    return this.redis.sunion(...keys);
+  }
 
-  const deleteCacheTags = async (cacheTags: CacheTag[]) => {
+  public async deleteCacheTags(cacheTags: CacheTag[]) {
     if (!cacheTags?.length) {
       return 0;
     }
 
-    const keys = cacheTags.map((tag) => `${keyPrefix}${tag}`);
+    const keys = cacheTags.map((tag) => `${this.keyPrefix}${tag}`);
 
-    return redis.del(...keys);
-  };
+    return this.redis.del(...keys);
+  }
 
-  const truncateCacheTags = async () => {
-    const pattern = `${keyPrefix}*`;
-    const keys = await redis.keys(pattern);
+  public async truncateCacheTags() {
+    const pattern = `${this.keyPrefix}*`;
+    const keys = await this.redis.keys(pattern);
 
     if (keys.length === 0) {
       return 0;
     }
 
-    return await redis.del(...keys);
-  };
-
-  return {
-    storeQueryCacheTags,
-    queriesReferencingCacheTags,
-    deleteCacheTags,
-    truncateCacheTags,
-  };
-};
+    return await this.redis.del(...keys);
+  }
+}

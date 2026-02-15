@@ -80,24 +80,24 @@ npm install @neondatabase/serverless
 3. Create and use the store:
 
 ```typescript
-import { createCacheTagsStore } from '@smartive/datocms-utils/cache/neon';
+import { NeonCacheTagsProvider } from '@smartive/datocms-utils/cache/neon';
 
-const store = createCacheTagsStore({
+const provider = new NeonCacheTagsProvider({
   connectionString: process.env.DATABASE_URL!,
   table: 'query_cache_tags',
 });
 
 // Store cache tags for a query
-await store.storeQueryCacheTags(queryId, ['item:42', 'product']);
+await provider.storeQueryCacheTags(queryId, ['item:42', 'product']);
 
 // Find queries that reference specific tags
-const queries = await store.queriesReferencingCacheTags(['item:42']);
+const queries = await provider.queriesReferencingCacheTags(['item:42']);
 
 // Delete specific cache tags
-await store.deleteCacheTags(['item:42']);
+await provider.deleteCacheTags(['item:42']);
 
 // Clear all cache tags
-await store.truncateCacheTags();
+await provider.truncateCacheTags();
 ```
 
 ##### Redis Provider
@@ -112,21 +112,21 @@ Use Redis to store cache tag mappings with better performance for high-traffic a
 npm install ioredis
 ```
 
-2. Create and use the store:
+2. Create and use the provider:
 
 ```typescript
-import { createCacheTagsStore } from '@smartive/datocms-utils/cache/redis';
+import { RedisCacheTagsProvider } from '@smartive/datocms-utils/cache/redis';
 
-const store = createCacheTagsStore({
+const provider = new RedisCacheTagsProvider({
   url: process.env.REDIS_URL!,
   keyPrefix: 'prod:', // Optional: namespace for multi-environment setups
 });
 
 // Same API as Neon provider
-await store.storeQueryCacheTags(queryId, ['item:42', 'product']);
+await provider.storeQueryCacheTags(queryId, ['item:42', 'product']);
 const queries = await store.queriesReferencingCacheTags(['item:42']);
-await store.deleteCacheTags(['item:42']);
-await store.truncateCacheTags();
+await provider.deleteCacheTags(['item:42']);
+await provider.truncateCacheTags();
 ```
 
 **Redis connection string examples:**
@@ -142,7 +142,7 @@ REDIS_URL=redis://username:password@redis-host:6379
 REDIS_URL=redis://localhost:6379
 ```
 
-#### `CacheTagsStore` Interface
+#### `CacheTagsProvider` Interface
 
 Both providers implement:
 
@@ -155,9 +155,9 @@ Both providers implement:
 
 ```typescript
 import { generateQueryId, parseXCacheTagsResponseHeader } from '@smartive/datocms-utils/cache';
-import { createCacheTagsStore } from '@smartive/datocms-utils/cache/redis';
+import { RedisCacheTagsProvider } from '@smartive/datocms-utils/cache/redis';
 
-const store = createCacheTagsStore({
+const provider = new RedisCacheTagsProvider({
   url: process.env.REDIS_URL!,
   keyPrefix: 'myapp:',
 });
@@ -165,12 +165,12 @@ const store = createCacheTagsStore({
 // After making a DatoCMS query
 const queryId = generateQueryId(query, variables);
 const cacheTags = parseXCacheTagsResponseHeader(response.headers['x-cache-tags']);
-await store.storeQueryCacheTags(queryId, cacheTags);
+await provider.storeQueryCacheTags(queryId, cacheTags);
 
 // When handling DatoCMS webhook for cache invalidation
-const affectedQueries = await store.queriesReferencingCacheTags(webhook.entity.attributes.tags);
+const affectedQueries = await provider.queriesReferencingCacheTags(webhook.entity.attributes.tags);
 // Revalidate affected queries...
-await store.deleteCacheTags(webhook.entity.attributes.tags);
+await provider.deleteCacheTags(webhook.entity.attributes.tags);
 ```
 
 ## TypeScript Types
@@ -179,7 +179,7 @@ The package includes TypeScript types for DatoCMS webhooks and cache tags:
 
 - `CacheTag`: A branded type for cache tags, ensuring type safety
 - `CacheTagsInvalidateWebhook`: Type definition for DatoCMS cache tag invalidation webhook payloads
-- `CacheTagsStore`: Interface for cache tag storage implementations
+- `CacheTagsProvider`: Interface for cache tag storage implementations
 
 ## License
 
