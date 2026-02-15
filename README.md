@@ -53,7 +53,7 @@ const tags = parseXCacheTagsResponseHeader('tag-a tag-2 other-tag');
 
 #### Storage Providers
 
-The package provides two storage backends for cache tags: **Neon (Postgres)** and **Redis**. Both implement the same `DatoCacheTagsProvider` interface.
+The package provides two storage backends for cache tags: **Neon (Postgres)** and **Redis**. Both implement the same `CacheTagsProvider` interface.
 
 ##### Neon (Postgres) Provider
 
@@ -80,9 +80,9 @@ npm install @neondatabase/serverless
 3. Create and use the store:
 
 ```typescript
-import { NeonDatoCacheTagsProvider } from '@smartive/datocms-utils/cache-tags/neon';
+import { NeonCacheTagsProvider } from '@smartive/datocms-utils/cache-tags/neon';
 
-const provider = new NeonDatoCacheTagsProvider({
+const provider = new NeonCacheTagsProvider({
   connectionString: process.env.DATABASE_URL!,
   table: 'query_cache_tags',
 });
@@ -115,9 +115,9 @@ npm install ioredis
 2. Create and use the provider:
 
 ```typescript
-import { RedisDatoCacheTagsProvider } from '@smartive/datocms-utils/cache-tags/redis';
+import { RedisCacheTagsProvider } from '@smartive/datocms-utils/cache-tags/redis';
 
-const provider = new RedisDatoCacheTagsProvider({
+const provider = new RedisCacheTagsProvider({
   url: process.env.REDIS_URL!,
   keyPrefix: 'prod:', // Optional: namespace for multi-environment setups
 });
@@ -142,7 +142,7 @@ REDIS_URL=redis://username:password@redis-host:6379
 REDIS_URL=redis://localhost:6379
 ```
 
-#### `DatoCacheTagsProvider` Interface
+#### `CacheTagsProvider` Interface
 
 Both providers implement:
 
@@ -155,9 +155,9 @@ Both providers implement:
 
 ```typescript
 import { generateQueryId, parseXCacheTagsResponseHeader } from '@smartive/datocms-utils/cache';
-import { RedisDatoCacheTagsProvider } from '@smartive/datocms-utils/cache-tags/redis';
+import { RedisCacheTagsProvider } from '@smartive/datocms-utils/cache-tags/redis';
 
-const provider = new RedisDatoCacheTagsProvider({
+const provider = new RedisCacheTagsProvider({
   url: process.env.REDIS_URL!,
   keyPrefix: 'myapp:',
 });
@@ -179,7 +179,7 @@ The package includes TypeScript types for DatoCMS webhooks and cache tags:
 
 - `CacheTag`: A branded type for cache tags, ensuring type safety
 - `CacheTagsInvalidateWebhook`: Type definition for DatoCMS cache tag invalidation webhook payloads
-- `DatoCacheTagsProvider`: Interface for cache tag storage implementations
+- `CacheTagsProvider`: Interface for cache tag storage implementations
 
 ## License
 

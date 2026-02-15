@@ -1,11 +1,11 @@
-import { type CacheTag, type DatoCacheTagsProvider } from '../types.js';
+import { type CacheTag, type CacheTagsProvider } from '../types.js';
 
 /**
- * A `DatoCacheTagsProvider` implementation that does not perform any actual storage operations.
+ * A `CacheTagsProvider` implementation that does not perform any actual storage operations.
  *
  * _Note: This implementation is useful for testing purposes or when you want to disable caching without changing the code that interacts with the cache._
  */
-export class NoopDatoCacheTagsProvider implements DatoCacheTagsProvider {
+export class NoopCacheTagsProvider implements CacheTagsProvider {
   public async storeQueryCacheTags(queryId: string, cacheTags: CacheTag[]) {
     console.debug('-- storeQueryCacheTags called', { queryId, cacheTags });
 

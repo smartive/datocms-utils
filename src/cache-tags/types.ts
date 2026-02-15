@@ -24,9 +24,9 @@ export type CacheTagsInvalidateWebhook = {
 };
 
 /**
- * Configuration object for creating a `DatoCacheTagsProvider` implementation.
+ * Configuration object for creating a `CacheTagsProvider` implementation.
  */
-export interface DatoCacheTagsProvider {
+export interface CacheTagsProvider {
   /**
    * Stores the cache tags of a query.
    *

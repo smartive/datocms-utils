@@ -1,7 +1,7 @@
 import { neon } from '@neondatabase/serverless';
-import { type CacheTag, type DatoCacheTagsProvider } from '../types.js';
+import { type CacheTag, type CacheTagsProvider } from '../types.js';
 
-type NeonDatoCacheTagsProviderConfig = {
+type NeonCacheTagsProviderConfig = {
   /**
    * Neon connection string. You can find it in the "Connection" tab of your Neon project dashboard.
    * Has the format `postgresql://user:pass@host/db`
@@ -22,13 +22,13 @@ type NeonDatoCacheTagsProviderConfig = {
 };
 
 /**
- * A `DatoCacheTagsProvider` implementation that uses Neon as the storage backend.
+ * A `CacheTagsProvider` implementation that uses Neon as the storage backend.
  */
-export class NeonDatoCacheTagsProvider implements DatoCacheTagsProvider {
+export class NeonCacheTagsProvider implements CacheTagsProvider {
   private readonly sql;
   private readonly table;
 
-  constructor({ connectionUrl, table }: NeonDatoCacheTagsProviderConfig) {
+  constructor({ connectionUrl, table }: NeonCacheTagsProviderConfig) {
     this.sql = neon(connectionUrl, { fullResults: true });
     this.table = table;
   }
