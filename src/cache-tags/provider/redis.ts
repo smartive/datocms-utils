@@ -64,13 +64,41 @@ export class RedisCacheTagsProvider implements CacheTagsProvider {
   }
 
   public async truncateCacheTags() {
-    const pattern = `${this.keyPrefix}*`;
-    const keys = await this.redis.keys(pattern);
+    const keys = await this.getKeys();
 
     if (keys.length === 0) {
       return 0;
     }
 
     return await this.redis.del(...keys);
+  }
+
+  /**
+   * Retrieves all keys matching the given pattern using the Redis SCAN command.
+   * This method is more efficient than using the KEYS command, especially for large datasets.
+   *
+   * @returns An array of matching keys
+   */
+  private async getKeys(): Promise<string[]> {
+    return new Promise((resolve, reject) => {
+      const keys: string[] = [];
+
+      const stream = this.redis.scanStream({
+        match: `${this.keyPrefix}*`,
+        count: 1000,
+      });
+
+      stream.on('data', (resultKeys: string[]) => {
+        keys.push(...resultKeys);
+      });
+
+      stream.on('end', () => {
+        resolve(keys);
+      });
+
+      stream.on('error', (err) => {
+        reject(err);
+      });
+    });
   }
 }
