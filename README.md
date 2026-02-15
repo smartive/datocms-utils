@@ -158,7 +158,7 @@ import { generateQueryId, parseXCacheTagsResponseHeader } from '@smartive/datocm
 import { RedisCacheTagsProvider } from '@smartive/datocms-utils/cache-tags/redis';
 
 const provider = new RedisCacheTagsProvider({
-  url: process.env.REDIS_URL!,
+  connectionUrl: process.env.REDIS_URL!,
   keyPrefix: 'myapp:',
 });
 
