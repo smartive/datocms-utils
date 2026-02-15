@@ -41,7 +41,7 @@ Utilities for managing [DatoCMS cache tags](https://www.datocms.com/docs/content
 #### Core Utilities
 
 ```typescript
-import { generateQueryId, parseXCacheTagsResponseHeader } from '@smartive/datocms-utils/cache';
+import { generateQueryId, parseXCacheTagsResponseHeader } from '@smartive/datocms-utils/cache-tags';
 
 // Generate a unique ID for a GraphQL query
 const queryId = generateQueryId(document, variables);
@@ -83,7 +83,7 @@ npm install @neondatabase/serverless
 import { NeonCacheTagsProvider } from '@smartive/datocms-utils/cache-tags/neon';
 
 const provider = new NeonCacheTagsProvider({
-  connectionString: process.env.DATABASE_URL!,
+  connectionUrl: process.env.DATABASE_URL!,
   table: 'query_cache_tags',
 });
 
@@ -124,7 +124,7 @@ const provider = new RedisCacheTagsProvider({
 
 // Same API as Neon provider
 await provider.storeQueryCacheTags(queryId, ['item:42', 'product']);
-const queries = await store.queriesReferencingCacheTags(['item:42']);
+const queries = await provider.queriesReferencingCacheTags(['item:42']);
 await provider.deleteCacheTags(['item:42']);
 await provider.truncateCacheTags();
 ```
@@ -154,7 +154,7 @@ Both providers implement:
 ### Complete Example
 
 ```typescript
-import { generateQueryId, parseXCacheTagsResponseHeader } from '@smartive/datocms-utils/cache';
+import { generateQueryId, parseXCacheTagsResponseHeader } from '@smartive/datocms-utils/cache-tags';
 import { RedisCacheTagsProvider } from '@smartive/datocms-utils/cache-tags/redis';
 
 const provider = new RedisCacheTagsProvider({
