@@ -52,7 +52,7 @@ export interface CacheTagsProvider {
    * run again, fresh cache tag mappings will be created.
    *
    * @param {CacheTag[]} cacheTags Array of cache tags to delete
-   * @returns Number of keys deleted, or null if there was an error
+   * @returns Number of keys deleted
    *
    */
   deleteCacheTags(cacheTags: CacheTag[]): Promise<number>;

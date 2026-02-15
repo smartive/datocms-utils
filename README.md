@@ -14,13 +14,13 @@ npm install @smartive/datocms-utils
 
 #### `classNames`
 
-Cleans and joins an array of class names, filtering out undefined and boolean values.
+Cleans and joins an array of class names (strings and numbers), filtering out undefined and boolean values.
 
 ```typescript
 import { classNames } from '@smartive/datocms-utils';
 
-const className = classNames('btn', isActive && 'btn-active', undefined, 'btn-primary');
-// Result: "btn btn-active btn-primary"
+const className = classNames('btn', isActive && 'btn-active', 42, undefined, 'btn-primary');
+// Result: "btn btn-active 42 btn-primary"
 ```
 
 #### `getTelLink`
@@ -118,7 +118,7 @@ npm install ioredis
 import { RedisCacheTagsProvider } from '@smartive/datocms-utils/cache-tags/redis';
 
 const provider = new RedisCacheTagsProvider({
-  url: process.env.REDIS_URL!,
+  connectionUrl: process.env.REDIS_URL!,
   keyPrefix: 'prod:', // Optional: namespace for multi-environment setups
 });
 

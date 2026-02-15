@@ -66,7 +66,7 @@ export class NeonCacheTagsProvider implements CacheTagsProvider {
   }
 
   public async deleteCacheTags(cacheTags: CacheTag[]) {
-    if (cacheTags.length === 0) {
+    if (!cacheTags?.length) {
       return 0;
     }
     const placeholders = cacheTags.map((_, i) => `$${i + 1}`).join(',');
