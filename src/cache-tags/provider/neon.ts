@@ -33,7 +33,7 @@ function quoteIdentifier(identifier: string): string {
   // They can also contain dots for schema-qualified names
   if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*(\.[a-zA-Z_$][a-zA-Z0-9_$]*)?$/.test(identifier)) {
     throw new Error(
-      `Invalid table name: ${identifier}. Table names must start with a letter, underscore, or dollar sign and contain only letters, digits, underscores, and dollar signs.`,
+      `Invalid table name: ${identifier}. Table names must start with a letter, underscore, or dollar sign and contain only letters, digits, underscores, and dollar signs. Schema-qualified names (e.g., "schema.table") are supported.`,
     );
   }
 
