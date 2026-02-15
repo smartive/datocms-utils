@@ -1,7 +1,7 @@
 import { Redis } from 'ioredis';
-import { type CacheTag, type CacheTagsProvider } from '../types.js';
+import { type CacheTag, type DatoCacheTagsProvider } from '../types.js';
 
-type RedisCacheTagsStoreConfig = {
+type RedisDatoCacheTagsProviderConfig = {
   /**
    * Redis connection string. For example, `redis://user:pass@host:port/db`.
    */
@@ -15,13 +15,13 @@ type RedisCacheTagsStoreConfig = {
 };
 
 /**
- * A `CacheTagsProvider` implementation that uses Redis as the storage backend.
+ * A `DatoCacheTagsProvider` implementation that uses Redis as the storage backend.
  */
-export class RedisCacheTagsProvider implements CacheTagsProvider {
+export class RedisDatoCacheTagsProvider implements DatoCacheTagsProvider {
   private readonly redis;
   private readonly keyPrefix;
 
-  constructor({ connectionUrl, keyPrefix }: RedisCacheTagsStoreConfig) {
+  constructor({ connectionUrl, keyPrefix }: RedisDatoCacheTagsProviderConfig) {
     this.redis = new Redis(connectionUrl, {
       maxRetriesPerRequest: 3,
       lazyConnect: true,

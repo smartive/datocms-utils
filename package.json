@@ -9,21 +9,21 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./cache": {
-      "types": "./dist/cache/index.d.ts",
-      "import": "./dist/cache/index.js"
+    "./cache-tags": {
+      "types": "./dist/cache-tags/index.d.ts",
+      "import": "./dist/cache-tags/index.js"
     },
-    "./cache/redis": {
-      "types": "./dist/cache/provider/redis.d.ts",
-      "import": "./dist/cache/provider/redis.js"
+    "./cache-tags/redis": {
+      "types": "./dist/cache-tags/provider/redis.d.ts",
+      "import": "./dist/cache-tags/provider/redis.js"
     },
-    "./cache/neon": {
-      "types": "./dist/cache/provider/neon.d.ts",
-      "import": "./dist/cache/provider/neon.js"
+    "./cache-tags/neon": {
+      "types": "./dist/cache-tags/provider/neon.d.ts",
+      "import": "./dist/cache-tags/provider/neon.js"
     },
-    "./cache/noop": {
-      "types": "./dist/cache/provider/noop.d.ts",
-      "import": "./dist/cache/provider/noop.js"
+    "./cache-tags/noop": {
+      "types": "./dist/cache-tags/provider/noop.d.ts",
+      "import": "./dist/cache-tags/provider/noop.js"
     }
   },
   "files": [
