@@ -31,17 +31,18 @@ function quoteIdentifier(identifier: string): string {
   // Validate that the identifier contains only valid characters
   // PostgreSQL identifiers can contain letters, digits, underscores, and dollar signs
   // They can also contain dots for schema-qualified names
-  if (!/^[a-zA-Z_][a-zA-Z0-9_$]*(\.[a-zA-Z_][a-zA-Z0-9_$]*)?$/.test(identifier)) {
+  if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*(\.[a-zA-Z_$][a-zA-Z0-9_$]*)?$/.test(identifier)) {
     throw new Error(
-      `Invalid table name: ${identifier}. Table names must start with a letter or underscore and contain only letters, digits, underscores, and dollar signs.`,
+      `Invalid table name: ${identifier}. Table names must start with a letter, underscore, or dollar sign and contain only letters, digits, underscores, and dollar signs.`,
     );
   }
 
   // Quote the identifier using double quotes to prevent SQL injection
   // Handle schema-qualified names (e.g., "schema.table")
+  // Escape any double quotes within the identifier by doubling them
   return identifier
     .split('.')
-    .map((part) => `"${part}"`)
+    .map((part) => `"${part.replace(/"/g, '""')}"`)
     .join('.');
 }
 
