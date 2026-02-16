@@ -1,7 +1,7 @@
 import { Redis } from 'ioredis';
 import { type CacheTag, type CacheTagsProvider } from '../types.js';
 
-type RedisCacheTagsProviderConfig = {
+export type RedisCacheTagsProviderConfig = {
   /**
    * Redis connection string. For example, `redis://user:pass@host:port/db`.
    */

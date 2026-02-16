@@ -1,7 +1,7 @@
 import { neon } from '@neondatabase/serverless';
 import { type CacheTag, type CacheTagsProvider } from '../types.js';
 
-type NeonCacheTagsProviderConfig = {
+export type NeonCacheTagsProviderConfig = {
   /**
    * Neon connection string. You can find it in the "Connection" tab of your Neon project dashboard.
    * Has the format `postgresql://user:pass@host/db`
@@ -85,9 +85,6 @@ export class NeonCacheTagsProvider implements CacheTagsProvider {
    * @throws Error if the identifier is invalid
    */
   private static quoteIdentifier(identifier: string): string {
-    // Validate that the identifier contains only valid characters
-    // PostgreSQL identifiers can contain letters, digits, underscores, and dollar signs
-    // They can also contain dots for schema-qualified names
     if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*(\.[a-zA-Z_$][a-zA-Z0-9_$]*)?$/.test(identifier)) {
       throw new Error(
         `Invalid table name: ${identifier}. Table names must start with a letter, underscore, or dollar sign and contain only letters, digits, underscores, and dollar signs. Schema-qualified names (e.g., "schema.table") are supported.`,
