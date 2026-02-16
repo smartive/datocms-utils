@@ -53,7 +53,7 @@ const tags = parseXCacheTagsResponseHeader('tag-a tag-2 other-tag');
 
 #### Storage Providers
 
-The package provides two storage backends for cache tags: **Neon (Postgres)** and **Redis**. Both implement the same `CacheTagsProvider` interface.
+The package provides three storage backends for cache tags: **Neon (Postgres)**, **Redis**, and **Noop**. All implement the same `CacheTagsProvider` interface, with the Noop provider being especially useful for testing and development.
 
 ##### Neon (Postgres) Provider
 
@@ -163,7 +163,7 @@ const provider = new RedisCacheTagsProvider({
 });
 
 // After making a DatoCMS query
-const queryId = generateQueryId(query, variables);
+const queryId = generateQueryId(document, variables);
 const cacheTags = parseXCacheTagsResponseHeader(response.headers['x-cache-tags']);
 await provider.storeQueryCacheTags(queryId, cacheTags);
 

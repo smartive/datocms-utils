@@ -40,7 +40,13 @@ export class RedisCacheTagsProvider implements CacheTagsProvider {
       pipeline.sadd(`${this.keyPrefix}${tag}`, queryId);
     }
 
-    await pipeline.exec();
+    const results = await pipeline.exec();
+
+    for (const [error] of results) {
+      if (error) {
+        throw error;
+      }
+    }
   }
 
   public async queriesReferencingCacheTags(cacheTags: CacheTag[]) {
