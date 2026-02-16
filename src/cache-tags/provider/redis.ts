@@ -41,11 +41,9 @@ export class RedisCacheTagsProvider implements CacheTagsProvider {
     }
 
     const results = await pipeline.exec();
-
-    for (const [error] of results) {
-      if (error) {
-        throw error;
-      }
+    const error = results?.find(([err]) => err)?.[0];
+    if (error) {
+      throw error;
     }
   }
 
