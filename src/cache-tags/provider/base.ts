@@ -11,7 +11,7 @@ export abstract class AbstractErrorHandlingCacheTagsProvider implements CacheTag
     protected readonly providerName: string,
     config: CacheTagsProviderErrorHandlingConfig = {},
   ) {
-    this.throwOnError = config.throwOnError ?? false;
+    this.throwOnError = config.throwOnError ?? true;
     this.onError = config.onError;
   }
 
