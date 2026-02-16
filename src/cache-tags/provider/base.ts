@@ -33,7 +33,7 @@ export abstract class AbstractErrorHandlingCacheTagsProvider implements CacheTag
       if (this.throwOnError) {
         throw error;
       }
-      console.debug(`Error occurred in ${provider}.${method} with args ${JSON.stringify(args)}.`, { error });
+      console.debug(`Error occurred in ${provider}.${method}.`, { error, args });
 
       return fallback;
     }
