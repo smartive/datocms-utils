@@ -1,7 +1,7 @@
 import type { CacheTag, CacheTagsProvider, CacheTagsProviderErrorHandlingConfig } from '../types.js';
 
 /**
- * A wrapper for `CacheTagsProvider` implementations that adds error handling and logging.
+ * An abstract base class for `CacheTagsProvider` implementations that adds error handling and logging.
  */
 export abstract class AbstractErrorHandlingCacheTagsProvider implements CacheTagsProvider {
   protected readonly throwOnError: boolean;

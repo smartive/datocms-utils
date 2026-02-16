@@ -73,7 +73,11 @@ export type CacheTagsProviderErrorHandlingConfig = {
   throwOnError?: boolean;
 
   /**
-   * Optional hook (logging/telemetry).
+   * Optional callback invoked when an error occurs in a `CacheTagsProvider` method,
+   * useful for logging and telemetry.
+   *
+   * Called before the error is either thrown (when `throwOnError` is true or
+   * undefined) or suppressed (when `throwOnError` is false).
    */
   onError?: (error: unknown, ctx: { provider: string; method: keyof CacheTagsProvider; args: unknown[] }) => void;
 };
