@@ -38,7 +38,7 @@ export class RedisCacheTagsProvider extends AbstractErrorHandlingCacheTagsProvid
       'storeQueryCacheTags',
       [queryId, cacheTags],
       async () => {
-        if (cacheTags.length === 0) {
+        if (!cacheTags?.length) {
           return;
         }
 
@@ -63,7 +63,7 @@ export class RedisCacheTagsProvider extends AbstractErrorHandlingCacheTagsProvid
       'queriesReferencingCacheTags',
       [cacheTags],
       async () => {
-        if (cacheTags.length === 0) {
+        if (!cacheTags?.length) {
           return [];
         }
 
@@ -80,7 +80,7 @@ export class RedisCacheTagsProvider extends AbstractErrorHandlingCacheTagsProvid
       'deleteCacheTags',
       [cacheTags],
       async () => {
-        if (cacheTags.length === 0) {
+        if (!cacheTags?.length) {
           return 0;
         }
 

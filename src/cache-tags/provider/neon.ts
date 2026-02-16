@@ -42,7 +42,7 @@ export class NeonCacheTagsProvider extends AbstractErrorHandlingCacheTagsProvide
       'storeQueryCacheTags',
       [queryId, cacheTags],
       async () => {
-        if (cacheTags.length === 0) {
+        if (!cacheTags?.length) {
           return;
         }
 
@@ -60,7 +60,7 @@ export class NeonCacheTagsProvider extends AbstractErrorHandlingCacheTagsProvide
       'queriesReferencingCacheTags',
       [cacheTags],
       async () => {
-        if (cacheTags.length === 0) {
+        if (!cacheTags?.length) {
           return [];
         }
 
@@ -88,7 +88,7 @@ export class NeonCacheTagsProvider extends AbstractErrorHandlingCacheTagsProvide
       'deleteCacheTags',
       [cacheTags],
       async () => {
-        if (cacheTags.length === 0) {
+        if (!cacheTags?.length) {
           return 0;
         }
         const placeholders = cacheTags.map((_, i) => `$${i + 1}`).join(',');
