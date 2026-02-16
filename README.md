@@ -85,6 +85,10 @@ import { NeonCacheTagsProvider } from '@smartive/datocms-utils/cache-tags/neon';
 const provider = new NeonCacheTagsProvider({
   connectionUrl: process.env.DATABASE_URL!,
   table: 'query_cache_tags',
+  throwOnError: false,  // Optional: Disable error throwing, defaults to `true`
+  onError(error, ctx) { // Optional: Custom error callback
+    console.error('CacheTagsProvider error', { error, context: ctx });
+  },
 });
 
 // Store cache tags for a query
@@ -120,6 +124,7 @@ import { RedisCacheTagsProvider } from '@smartive/datocms-utils/cache-tags/redis
 const provider = new RedisCacheTagsProvider({
   connectionUrl: process.env.REDIS_URL!,
   keyPrefix: 'prod:', // Optional: namespace for multi-environment setups
+  throwOnError: process.env.NODE_ENV === 'development', // Optional: Disable error throwing in production - defaults to `true`
 });
 
 // Same API as Neon provider
