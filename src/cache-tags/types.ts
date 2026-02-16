@@ -64,3 +64,16 @@ export interface CacheTagsProvider {
    */
   truncateCacheTags(): Promise<number>;
 }
+
+export type CacheTagsProviderErrorHandlingConfig = {
+  /**
+   * If false, errors are suppressed and a fallback value is returned.
+   * Default: true
+   */
+  throwOnError?: boolean;
+
+  /**
+   * Optional hook (logging/telemetry).
+   */
+  onError?: (error: unknown, ctx: { provider: string; method: keyof CacheTagsProvider; args: unknown[] }) => void;
+};

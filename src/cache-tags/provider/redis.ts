@@ -1,7 +1,8 @@
 import { Redis } from 'ioredis';
-import { type CacheTag, type CacheTagsProvider } from '../types.js';
+import type { CacheTag, CacheTagsProvider, CacheTagsProviderErrorHandlingConfig } from '../types.js';
+import { AbstractErrorHandlingCacheTagsProvider } from './base.js';
 
-export type RedisCacheTagsProviderConfig = {
+type RedisCacheTagsProviderBaseConfig = {
   /**
    * Redis connection string. For example, `redis://user:pass@host:port/db`.
    */
@@ -14,14 +15,17 @@ export type RedisCacheTagsProviderConfig = {
   readonly keyPrefix?: string;
 };
 
+export type RedisCacheTagsProviderConfig = RedisCacheTagsProviderBaseConfig & CacheTagsProviderErrorHandlingConfig;
+
 /**
  * A `CacheTagsProvider` implementation that uses Redis as the storage backend.
  */
-export class RedisCacheTagsProvider implements CacheTagsProvider {
+export class RedisCacheTagsProvider extends AbstractErrorHandlingCacheTagsProvider implements CacheTagsProvider {
   private readonly redis;
   private readonly keyPrefix;
 
-  constructor({ connectionUrl, keyPrefix }: RedisCacheTagsProviderConfig) {
+  constructor({ connectionUrl, keyPrefix, throwOnError, onError }: RedisCacheTagsProviderConfig) {
+    super('RedisCacheTagsProvider', { throwOnError, onError });
     this.redis = new Redis(connectionUrl, {
       maxRetriesPerRequest: 3,
       lazyConnect: true,
@@ -30,51 +34,79 @@ export class RedisCacheTagsProvider implements CacheTagsProvider {
   }
 
   public async storeQueryCacheTags(queryId: string, cacheTags: CacheTag[]) {
-    if (!cacheTags?.length) {
-      return;
-    }
+    return this.wrap(
+      'storeQueryCacheTags',
+      [queryId, cacheTags],
+      async () => {
+        if (cacheTags.length === 0) {
+          return;
+        }
 
-    const pipeline = this.redis.pipeline();
+        const pipeline = this.redis.pipeline();
 
-    for (const tag of cacheTags) {
-      pipeline.sadd(`${this.keyPrefix}${tag}`, queryId);
-    }
+        for (const tag of cacheTags) {
+          pipeline.sadd(`${this.keyPrefix}${tag}`, queryId);
+        }
 
-    const results = await pipeline.exec();
-    const error = results?.find(([err]) => err)?.[0];
-    if (error) {
-      throw error;
-    }
+        const results = await pipeline.exec();
+        const error = results?.find(([err]) => err)?.[0];
+        if (error) {
+          throw error;
+        }
+      },
+      undefined,
+    );
   }
 
   public async queriesReferencingCacheTags(cacheTags: CacheTag[]) {
-    if (!cacheTags?.length) {
-      return [];
-    }
+    return this.wrap(
+      'queriesReferencingCacheTags',
+      [cacheTags],
+      async () => {
+        if (cacheTags.length === 0) {
+          return [];
+        }
 
-    const keys = cacheTags.map((tag) => `${this.keyPrefix}${tag}`);
+        const keys = cacheTags.map((tag) => `${this.keyPrefix}${tag}`);
 
-    return this.redis.sunion(...keys);
+        return this.redis.sunion(...keys);
+      },
+      [],
+    );
   }
 
   public async deleteCacheTags(cacheTags: CacheTag[]) {
-    if (!cacheTags?.length) {
-      return 0;
-    }
+    return this.wrap(
+      'deleteCacheTags',
+      [cacheTags],
+      async () => {
+        if (cacheTags.length === 0) {
+          return 0;
+        }
 
-    const keys = cacheTags.map((tag) => `${this.keyPrefix}${tag}`);
+        const keys = cacheTags.map((tag) => `${this.keyPrefix}${tag}`);
 
-    return this.redis.del(...keys);
+        return this.redis.del(...keys);
+      },
+      0,
+    );
   }
 
   public async truncateCacheTags() {
-    const keys = await this.getKeys();
+    return this.wrap(
+      'truncateCacheTags',
+      [],
+      async () => {
+        const keys = await this.getKeys();
 
-    if (keys.length === 0) {
-      return 0;
-    }
+        if (keys.length === 0) {
+          return 0;
+        }
 
-    return await this.redis.del(...keys);
+        return await this.redis.del(...keys);
+      },
+      0,
+    );
   }
 
   /**

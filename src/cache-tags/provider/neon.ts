@@ -1,7 +1,8 @@
 import { neon } from '@neondatabase/serverless';
-import { type CacheTag, type CacheTagsProvider } from '../types.js';
+import type { CacheTag, CacheTagsProvider, CacheTagsProviderErrorHandlingConfig } from '../types.js';
+import { AbstractErrorHandlingCacheTagsProvider } from './base.js';
 
-export type NeonCacheTagsProviderConfig = {
+type NeonCacheTagsProviderBaseConfig = {
   /**
    * Neon connection string. You can find it in the "Connection" tab of your Neon project dashboard.
    * Has the format `postgresql://user:pass@host/db`
@@ -21,61 +22,94 @@ export type NeonCacheTagsProviderConfig = {
   readonly table: string;
 };
 
+export type NeonCacheTagsProviderConfig = NeonCacheTagsProviderBaseConfig & CacheTagsProviderErrorHandlingConfig;
+
 /**
  * A `CacheTagsProvider` implementation that uses Neon as the storage backend.
  */
-export class NeonCacheTagsProvider implements CacheTagsProvider {
+export class NeonCacheTagsProvider extends AbstractErrorHandlingCacheTagsProvider implements CacheTagsProvider {
   private readonly sql;
   private readonly table;
 
-  constructor({ connectionUrl, table }: NeonCacheTagsProviderConfig) {
+  constructor({ connectionUrl, table, throwOnError, onError }: NeonCacheTagsProviderConfig) {
+    super('NeonCacheTagsProvider', { throwOnError, onError });
     this.sql = neon(connectionUrl, { fullResults: true });
     this.table = NeonCacheTagsProvider.quoteIdentifier(table);
   }
 
   public async storeQueryCacheTags(queryId: string, cacheTags: CacheTag[]) {
-    if (!cacheTags?.length) {
-      return;
-    }
+    return this.wrap(
+      'storeQueryCacheTags',
+      [queryId, cacheTags],
+      async () => {
+        if (cacheTags.length === 0) {
+          return;
+        }
 
-    const tags = cacheTags.flatMap((_, i) => [queryId, cacheTags[i]]);
-    const placeholders = cacheTags.map((_, i) => `($${2 * i + 1}, $${2 * i + 2})`).join(',');
+        const tags = cacheTags.flatMap((_, i) => [queryId, cacheTags[i]]);
+        const placeholders = cacheTags.map((_, i) => `($${2 * i + 1}, $${2 * i + 2})`).join(',');
 
-    await this.sql.query(`INSERT INTO ${this.table} VALUES ${placeholders} ON CONFLICT DO NOTHING`, tags);
+        await this.sql.query(`INSERT INTO ${this.table} VALUES ${placeholders} ON CONFLICT DO NOTHING`, tags);
+      },
+      undefined,
+    );
   }
 
   public async queriesReferencingCacheTags(cacheTags: CacheTag[]): Promise<string[]> {
-    if (!cacheTags?.length) {
-      return [];
-    }
+    return this.wrap(
+      'queriesReferencingCacheTags',
+      [cacheTags],
+      async () => {
+        if (cacheTags.length === 0) {
+          return [];
+        }
 
-    const placeholders = cacheTags.map((_, i) => `$${i + 1}`).join(',');
+        const placeholders = cacheTags.map((_, i) => `$${i + 1}`).join(',');
 
-    const { rows } = await this.sql.query(
-      `SELECT DISTINCT query_id FROM ${this.table} WHERE cache_tag IN (${placeholders})`,
-      cacheTags,
+        const { rows } = await this.sql.query(
+          `SELECT DISTINCT query_id FROM ${this.table} WHERE cache_tag IN (${placeholders})`,
+          cacheTags,
+        );
+
+        return rows.reduce<string[]>((queryIds, row) => {
+          if (typeof row.query_id === 'string') {
+            queryIds.push(row.query_id);
+          }
+
+          return queryIds;
+        }, []);
+      },
+      [],
     );
-
-    return rows.reduce<string[]>((queryIds, row) => {
-      if (typeof row.query_id === 'string') {
-        queryIds.push(row.query_id);
-      }
-
-      return queryIds;
-    }, []);
   }
 
   public async deleteCacheTags(cacheTags: CacheTag[]) {
-    if (!cacheTags?.length) {
-      return 0;
-    }
-    const placeholders = cacheTags.map((_, i) => `$${i + 1}`).join(',');
+    return this.wrap(
+      'deleteCacheTags',
+      [cacheTags],
+      async () => {
+        if (cacheTags.length === 0) {
+          return 0;
+        }
+        const placeholders = cacheTags.map((_, i) => `$${i + 1}`).join(',');
 
-    return (await this.sql.query(`DELETE FROM ${this.table} WHERE cache_tag IN (${placeholders})`, cacheTags)).rowCount ?? 0;
+        return (
+          (await this.sql.query(`DELETE FROM ${this.table} WHERE cache_tag IN (${placeholders})`, cacheTags)).rowCount ?? 0
+        );
+      },
+      0,
+    );
   }
 
   public async truncateCacheTags() {
-    return (await this.sql.query(`DELETE FROM ${this.table}`)).rowCount ?? 0;
+    return this.wrap(
+      'truncateCacheTags',
+      [],
+      async () => {
+        return (await this.sql.query(`DELETE FROM ${this.table}`)).rowCount ?? 0;
+      },
+      0,
+    );
   }
 
   /**
