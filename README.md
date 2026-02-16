@@ -1,6 +1,6 @@
 # smartive DatoCMS Utilities
 
-A set of utilities and helpers to work with DatoCMS in a Next.js project.
+A collection of utilities and helpers for working with DatoCMS in Next.js projects.
 
 ## Installation
 
@@ -8,23 +8,60 @@ A set of utilities and helpers to work with DatoCMS in a Next.js project.
 npm install @smartive/datocms-utils
 ```
 
-## Usage
-
-Import and use the utilities you need in your project. The following utilities are available.
-
 ## Utilities
 
-### Utilities for DatoCMS Cache Tags
+### General Utilities
 
-The following utilities are used to work with [DatoCMS cache tags](https://www.datocms.com/docs/content-delivery-api/cache-tags) and a [Vercel Postgres database](https://vercel.com/docs/storage/vercel-postgres).
+#### `classNames`
 
-- `storeQueryCacheTags`: Stores the cache tags of a query in the database.
-- `queriesReferencingCacheTags`: Retrieves the queries that reference cache tags.
-- `deleteQueries`: Deletes the cache tags of a query from the database.
+Cleans and joins an array of class names (strings and numbers), filtering out undefined and boolean values.
 
-#### Setup Postgres database
+```typescript
+import { classNames } from '@smartive/datocms-utils';
 
-In order for the above utilites to work, you need to setup a the following database. You can use the following SQL script to do that:
+const className = classNames('btn', isActive && 'btn-active', 42, undefined, 'btn-primary');
+// Result: "btn btn-active 42 btn-primary"
+```
+
+#### `getTelLink`
+
+Converts a phone number into a `tel:` link by removing non-digit characters (except `+` for international numbers).
+
+```typescript
+import { getTelLink } from '@smartive/datocms-utils';
+
+const link = getTelLink('+1 (555) 123-4567');
+// Result: "tel:+15551234567"
+```
+
+### DatoCMS Cache Tags
+
+Utilities for managing [DatoCMS cache tags](https://www.datocms.com/docs/content-delivery-api/cache-tags) with different storage backends. Cache tags enable efficient cache invalidation by tracking which queries reference which content.
+
+#### Core Utilities
+
+```typescript
+import { generateQueryId, parseXCacheTagsResponseHeader } from '@smartive/datocms-utils/cache-tags';
+
+// Generate a unique ID for a GraphQL query
+const queryId = generateQueryId(document, variables);
+
+// Parse DatoCMS's X-Cache-Tags header
+const tags = parseXCacheTagsResponseHeader('tag-a tag-2 other-tag');
+// Result: ['tag-a', 'tag-2', 'other-tag']
+```
+
+#### Storage Providers
+
+The package provides multiple storage backends for cache tags: **Neon (Postgres)**, **Redis**, and **Noop**. All implement the same `CacheTagsProvider` interface, with the Noop provider being especially useful for testing and development.
+
+##### Neon (Postgres) Provider
+
+Use Neon serverless Postgres to store cache tag mappings.
+
+**Setup:**
+
+1. Create the cache tags table:
 
 ```sql
 CREATE TABLE IF NOT EXISTS query_cache_tags (
@@ -34,75 +71,121 @@ CREATE TABLE IF NOT EXISTS query_cache_tags (
 );
 ```
 
-### Utilities for DatoCMS Cache Tags (Redis)
-
-The following utilities provide Redis-based alternatives to the Postgres cache tags implementation above. They work with [DatoCMS cache tags](https://www.datocms.com/docs/content-delivery-api/cache-tags) and any Redis instance.
-
-- `redis.storeQueryCacheTags`: Stores the cache tags of a query in Redis.
-- `redis.queriesReferencingCacheTags`: Retrieves the queries that reference cache tags.
-- `redis.deleteCacheTags`: Deletes cache tags from Redis.
-- `redis.truncateCacheTags`: Wipes out all cache tags from Redis.
-
-The Redis connection is automatically initialized on first use using the `REDIS_URL` environment variable.
-
-#### Environment Variables
-
-Add your Redis connection URL to your `.env.local` file:
+2. Install [@neondatabase/serverless](https://github.com/neondatabase/serverless)
 
 ```bash
-# Required: Redis connection URL
-# For Upstash Redis
-REDIS_URL=rediss://default:your-token@your-endpoint.upstash.io:6379
-
-# For Redis Cloud or other providers
-REDIS_URL=redis://username:password@your-redis-host:6379
-
-# For local development
-REDIS_URL=redis://localhost:6379
-
-# Optional: Key prefix for separating production/preview environments
-# Useful when using the same Redis instance for multiple environments
-REDIS_KEY_PREFIX=prod        # For production
-REDIS_KEY_PREFIX=preview     # For preview/staging
-# Leave empty for development (no prefix)
+npm install @neondatabase/serverless
 ```
 
-**Note**: Similar to how the Postgres version uses different table names, use `REDIS_KEY_PREFIX` to separate data between environments when using the same Redis instance.
-
-#### Usage Example
+3. Create and use the store:
 
 ```typescript
-// Recommended: Use namespaces for clarity
-import { generateQueryId, redis } from '@smartive/datocms-utils';
+import { NeonCacheTagsProvider } from '@smartive/datocms-utils/cache-tags/neon';
 
-const queryId = generateQueryId(query, variables);
+const provider = new NeonCacheTagsProvider({
+  connectionUrl: process.env.DATABASE_URL!,
+  table: 'query_cache_tags',
+  throwOnError: false,  // Optional: Disable error throwing, defaults to `true`
+  onError(error, ctx) { // Optional: Custom error callback
+    console.error('CacheTagsProvider error', { error, context: ctx });
+  },
+});
 
 // Store cache tags for a query
-await redis.storeQueryCacheTags(queryId, ['item:42', 'product', 'category:5']);
+await provider.storeQueryCacheTags(queryId, ['item:42', 'product']);
 
-// Find all queries that reference specific tags
-const affectedQueries = await redis.queriesReferencingCacheTags(['item:42']);
+// Find queries that reference specific tags
+const queries = await provider.queriesReferencingCacheTags(['item:42']);
 
-// Delete cache tags (keys will be recreated on next query)
-await redis.deleteCacheTags(['item:42']);
+// Delete specific cache tags
+await provider.deleteCacheTags(['item:42']);
+
+// Clear all cache tags
+await provider.truncateCacheTags();
 ```
 
-#### Redis Data Structure
+##### Redis Provider
 
-The Redis implementation uses Sets to track query-to-tag relationships:
+Use Redis to store cache tag mappings with better performance for high-traffic applications.
 
-- **Cache tag keys**: `{prefix}{tag}` → Set of query IDs
+**Setup:**
 
-Where `{prefix}` is the optional `REDIS_KEY_PREFIX` environment variable (e.g., `prod:`, `preview:`).
+1. Install [ioredis](https://github.com/redis/ioredis)
 
-When cache tags are invalidated, their keys are deleted entirely. Fresh mappings are created when queries run again.
+```bash
+npm install ioredis
+```
 
-### Other Utilities
+2. Create and use the provider:
 
-- `classNames`: Cleans and joins an array of inputs with possible undefined or boolean values. Useful for tailwind classnames.
-- `getTelLink`: Formats a phone number to a tel link.
+```typescript
+import { RedisCacheTagsProvider } from '@smartive/datocms-utils/cache-tags/redis';
 
-### Types
+const provider = new RedisCacheTagsProvider({
+  connectionUrl: process.env.REDIS_URL!,
+  keyPrefix: 'prod:', // Optional: namespace for multi-environment setups
+  throwOnError: process.env.NODE_ENV === 'development', // Optional: Disable error throwing in production - defaults to `true`
+});
 
-- `CacheTag`: A branded type for cache tags.
-- `CacheTagsInvalidateWebhook`: The payload of the DatoCMS cache tags invalidate webhook.
+// Same API as Neon provider
+await provider.storeQueryCacheTags(queryId, ['item:42', 'product']);
+const queries = await provider.queriesReferencingCacheTags(['item:42']);
+await provider.deleteCacheTags(['item:42']);
+await provider.truncateCacheTags();
+```
+
+**Redis connection string examples:**
+
+```bash
+# Upstash Redis
+REDIS_URL=rediss://default:token@endpoint.upstash.io:6379
+
+# Redis Cloud
+REDIS_URL=redis://username:password@redis-host:6379
+
+# Local development
+REDIS_URL=redis://localhost:6379
+```
+
+#### `CacheTagsProvider` Interface
+
+Both providers implement:
+
+- `storeQueryCacheTags(queryId: string, cacheTags: CacheTag[])`: Store cache tags for a query
+- `queriesReferencingCacheTags(cacheTags: CacheTag[])`: Get query IDs that reference any of the specified tags
+- `deleteCacheTags(cacheTags: CacheTag[])`: Delete specific cache tags
+- `truncateCacheTags()`: Wipe all cache tags (use with caution)
+
+### Complete Example
+
+```typescript
+import { generateQueryId, parseXCacheTagsResponseHeader } from '@smartive/datocms-utils/cache-tags';
+import { RedisCacheTagsProvider } from '@smartive/datocms-utils/cache-tags/redis';
+
+const provider = new RedisCacheTagsProvider({
+  connectionUrl: process.env.REDIS_URL!,
+  keyPrefix: 'myapp:',
+});
+
+// After making a DatoCMS query
+const queryId = generateQueryId(document, variables);
+const cacheTags = parseXCacheTagsResponseHeader(response.headers['x-cache-tags']);
+await provider.storeQueryCacheTags(queryId, cacheTags);
+
+// When handling DatoCMS webhook for cache invalidation
+const affectedQueries = await provider.queriesReferencingCacheTags(webhook.entity.attributes.tags);
+// Revalidate affected queries...
+await provider.deleteCacheTags(webhook.entity.attributes.tags);
+```
+
+## TypeScript Types
+
+The package includes TypeScript types for DatoCMS webhooks and cache tags:
+
+- `CacheTag`: A branded type for cache tags, ensuring type safety
+- `CacheTagsInvalidateWebhook`: Type definition for DatoCMS cache tag invalidation webhook payloads
+- `CacheTagsProvider`: Interface for cache tag storage implementations
+
+## License
+
+MIT © [smartive AG](https://github.com/smartive)

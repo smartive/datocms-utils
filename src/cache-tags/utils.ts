@@ -1,6 +1,6 @@
 import { print, type DocumentNode } from 'graphql';
 import { createHash } from 'node:crypto';
-import { type CacheTag } from './types';
+import { type CacheTag } from './types.js';
 
 /**
  * Converts the value of DatoCMS's `X-Cache-Tags` header into an array of strings typed as `CacheTag`.
