@@ -53,7 +53,7 @@ const tags = parseXCacheTagsResponseHeader('tag-a tag-2 other-tag');
 
 #### Storage Providers
 
-The package provides three storage backends for cache tags: **Neon (Postgres)**, **Redis**, and **Noop**. All implement the same `CacheTagsProvider` interface, with the Noop provider being especially useful for testing and development.
+The package provides multiple storage backends for cache tags: **Neon (Postgres)**, **Redis**, and **Noop**. All implement the same `CacheTagsProvider` interface, with the Noop provider being especially useful for testing and development.
 
 ##### Neon (Postgres) Provider
 
