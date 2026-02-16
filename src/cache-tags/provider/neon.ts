@@ -30,7 +30,7 @@ export class NeonCacheTagsProvider implements CacheTagsProvider {
 
   constructor({ connectionUrl, table }: NeonCacheTagsProviderConfig) {
     this.sql = neon(connectionUrl, { fullResults: true });
-    this.table = table;
+    this.table = NeonCacheTagsProvider.quoteIdentifier(table);
   }
 
   public async storeQueryCacheTags(queryId: string, cacheTags: CacheTag[]) {
@@ -76,5 +76,30 @@ export class NeonCacheTagsProvider implements CacheTagsProvider {
 
   public async truncateCacheTags() {
     return (await this.sql.query(`DELETE FROM ${this.table}`)).rowCount ?? 0;
+  }
+
+  /**
+   * Validates and quotes a PostgreSQL identifier (table name, column name, etc.) to prevent SQL injection.
+   * @param identifier The identifier to validate and quote
+   * @returns The properly quoted identifier
+   * @throws Error if the identifier is invalid
+   */
+  private static quoteIdentifier(identifier: string): string {
+    // Validate that the identifier contains only valid characters
+    // PostgreSQL identifiers can contain letters, digits, underscores, and dollar signs
+    // They can also contain dots for schema-qualified names
+    if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*(\.[a-zA-Z_$][a-zA-Z0-9_$]*)?$/.test(identifier)) {
+      throw new Error(
+        `Invalid table name: ${identifier}. Table names must start with a letter, underscore, or dollar sign and contain only letters, digits, underscores, and dollar signs. Schema-qualified names (e.g., "schema.table") are supported.`,
+      );
+    }
+
+    // Quote the identifier using double quotes to prevent SQL injection
+    // Handle schema-qualified names (e.g., "schema.table")
+    // Escape any double quotes within the identifier by doubling them
+    return identifier
+      .split('.')
+      .map((part) => `"${part.replace(/"/g, '""')}"`)
+      .join('.');
   }
 }
