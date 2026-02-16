@@ -28,7 +28,14 @@ export abstract class AbstractErrorHandlingCacheTagsProvider implements CacheTag
       return await fn();
     } catch (error) {
       const provider = this.providerName;
-      this.onError?.(error, { provider, method, args });
+
+      // Call onError callback if provided, but guard against exceptions
+      // to prevent masking the original provider error
+      try {
+        this.onError?.(error, { provider, method, args });
+      } catch (handlerError) {
+        console.error(`Error handler itself failed in ${provider}.${method}.`, { handlerError });
+      }
 
       if (this.throwOnError) {
         throw error;
