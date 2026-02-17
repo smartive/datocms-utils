@@ -44,7 +44,7 @@ Utilities for managing [DatoCMS cache tags](https://www.datocms.com/docs/content
 import { generateQueryId, parseXCacheTagsResponseHeader } from '@smartive/datocms-utils/cache-tags';
 
 // Generate a unique ID for a GraphQL query
-const queryId = generateQueryId(document, variables);
+const queryId = generateQueryId(document, variables, headers);
 
 // Parse DatoCMS's X-Cache-Tags header
 const tags = parseXCacheTagsResponseHeader('tag-a tag-2 other-tag');
@@ -168,7 +168,7 @@ const provider = new RedisCacheTagsProvider({
 });
 
 // After making a DatoCMS query
-const queryId = generateQueryId(document, variables);
+const queryId = generateQueryId(document, variables, request.headers);
 const cacheTags = parseXCacheTagsResponseHeader(response.headers['x-cache-tags']);
 await provider.storeQueryCacheTags(queryId, cacheTags);
 

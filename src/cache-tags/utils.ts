@@ -13,15 +13,21 @@ export const parseXCacheTagsResponseHeader = (string?: null | string) =>
   (string?.split(' ') ?? []).map((tag) => tag as CacheTag);
 
 /**
- * Generates a unique query ID based on the query document and its variables.
+ * Generates a unique query ID based on the query document, its variables, and optional HTTP headers.
  *
  * @param {DocumentNode} document Query document
- * @param {TVariables} variables Query variables
+ * @param {TVariables} variables Optional query variables
+ * @param {HeadersInit} headers Optional HTTP headers that might affect the query result (e.g., for authentication)
  * @returns Unique query ID
  */
-export const generateQueryId = <TVariables = unknown>(document: DocumentNode, variables?: TVariables): string => {
+export const generateQueryId = <TVariables = unknown>(
+  document: DocumentNode,
+  variables?: TVariables,
+  headers?: HeadersInit,
+): string => {
   return createHash('sha1')
     .update(print(document))
     .update(JSON.stringify(variables) || '')
+    .update(JSON.stringify(headers) || '')
     .digest('hex');
 };
