@@ -59,28 +59,50 @@ export class NeonCacheTagsProvider extends AbstractErrorHandlingCacheTagsProvide
     return this.wrap(
       'queriesReferencingCacheTags',
       [cacheTags],
-      async () => {
-        if (!cacheTags?.length) {
-          return [];
-        }
-
-        const placeholders = cacheTags.map((_, i) => `$${i + 1}`).join(',');
-
-        const { rows } = await this.sql.query(
-          `SELECT DISTINCT query_id FROM ${this.table} WHERE cache_tag IN (${placeholders})`,
-          cacheTags,
-        );
-
-        return rows.reduce<string[]>((queryIds, row) => {
-          if (typeof row.query_id === 'string') {
-            queryIds.push(row.query_id);
-          }
-
-          return queryIds;
-        }, []);
+      async (): Promise<string[]> => {
+        return this.queriesReferencingCacheTagsWithRetry(cacheTags);
       },
       [],
     );
+  }
+
+  /**
+   * Retrieves query IDs that reference the given cache tags with retry logic to handle race conditions.
+   * If no IDs are found on the first attempt, waits 500ms and retries once to allow time for
+   * concurrent write operations to complete.
+   *
+   * @param cacheTags Array of cache tags to check
+   * @param attempt Current attempt number (internal parameter)
+   * @returns Array of unique query IDs
+   */
+  private async queriesReferencingCacheTagsWithRetry(cacheTags: CacheTag[], attempt = 1): Promise<string[]> {
+    if (!cacheTags?.length) {
+      return [];
+    }
+
+    const placeholders = cacheTags.map((_, i) => `$${i + 1}`).join(',');
+
+    const { rows } = await this.sql.query(
+      `SELECT DISTINCT query_id FROM ${this.table} WHERE cache_tag IN (${placeholders})`,
+      cacheTags,
+    );
+
+    const queryIds = rows.reduce<string[]>((queryIds, row) => {
+      if (typeof row.query_id === 'string') {
+        queryIds.push(row.query_id);
+      }
+
+      return queryIds;
+    }, []);
+
+    // If no IDs found and it's our first try, wait 500ms and try again
+    if (queryIds.length === 0 && attempt < 2) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      return this.queriesReferencingCacheTagsWithRetry(cacheTags, attempt + 1);
+    }
+
+    return queryIds;
   }
 
   public async deleteCacheTags(cacheTags: CacheTag[]) {
