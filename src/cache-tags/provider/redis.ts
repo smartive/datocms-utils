@@ -33,22 +33,39 @@ export class RedisCacheTagsProvider extends AbstractErrorHandlingCacheTagsProvid
     this.keyPrefix = keyPrefix ?? '';
   }
 
+  private logToConsole(level: 'info' | 'debug', event: string, details: Record<string, unknown>) {
+    const entry = {
+      timestamp: new Date().toISOString(),
+      scope: 'cache-tags',
+      provider: this.providerName,
+      event,
+      ...details,
+    };
+
+    if (level === 'debug') {
+      console.debug(JSON.stringify(entry));
+    } else {
+      console.info(JSON.stringify(entry));
+    }
+
+    return entry;
+  }
+
   /**
-   * Internal logger to capture race conditions for debugging.
-   * Entries are stored in a Redis list 'debug_logs'.
+   * Internal logger to capture cache tag activity for debugging.
+   * Entries are stored in a Redis list 'debug_logs' and also emitted to stdout for Vercel logs.
    */
   private async logEvent(event: string, details: Record<string, unknown>) {
+    const entry = this.logToConsole('info', event, details);
+
     try {
-      const entry = JSON.stringify({
-        timestamp: new Date().toISOString(),
-        event,
-        ...details,
-      });
-      await this.redis.lpush('debug_logs', entry);
+      await this.redis.lpush('debug_logs', JSON.stringify(entry));
       await this.redis.ltrim('debug_logs', 0, 499);
-      console.info(`[Dato-Debug] ${event}: ${entry}`);
     } catch (error) {
-      console.error('[Dato-Debug] Failed to log event:', error);
+      this.logToConsole('debug', 'DEBUG_LOG_WRITE_FAILED', {
+        originalEvent: event,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -84,10 +101,8 @@ export class RedisCacheTagsProvider extends AbstractErrorHandlingCacheTagsProvid
 
   /**
    * Retrieves query IDs associated with the given cache tags.
-   * Includes a retry mechanism to handle race conditions where the webhook
-   * arrives before the mapping write has completed.
    */
-  public async queriesReferencingCacheTags(cacheTags: CacheTag[], attempt = 1): Promise<string[]> {
+  public async queriesReferencingCacheTags(cacheTags: CacheTag[]): Promise<string[]> {
     return this.wrap(
       'queriesReferencingCacheTags',
       [cacheTags],
@@ -96,25 +111,16 @@ export class RedisCacheTagsProvider extends AbstractErrorHandlingCacheTagsProvid
           return [];
         }
 
+        await this.logEvent('CACHE_TAG_LOOKUP_START', { cacheTags });
+
         const keys = cacheTags.map((tag) => `${this.keyPrefix}${tag}`);
         const result = await this.redis.sunion(...keys);
 
-        // If no mappings found, wait 500ms and try one more time (Total 2 attempts).
-        if (result.length === 0 && attempt < 2) {
-          await this.logEvent('WEBHOOK_EMPTY_RETRYING', { cacheTags, attempt });
-
-          await new Promise((resolve) => setTimeout(resolve, 500));
-
-          // Re-call the method with the incremented attempt counter
-          return this.queriesReferencingCacheTags(cacheTags, attempt + 1);
-        }
-
-        // If we succeeded on a retry, log it so we can prove the race condition to Marcelo
-        if (attempt > 1) {
-          await this.logEvent(result.length > 0 ? 'RETRY_SUCCESS' : 'RETRY_FAILED', {
-            queryCount: result.length,
-          });
-        }
+        await this.logEvent(result.length > 0 ? 'CACHE_TAG_LOOKUP_RESULT' : 'CACHE_TAG_LOOKUP_EMPTY', {
+          cacheTags,
+          queryCount: result.length,
+          queryIds: result,
+        });
 
         return result;
       },
