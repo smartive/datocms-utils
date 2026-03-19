@@ -33,6 +33,25 @@ export class RedisCacheTagsProvider extends AbstractErrorHandlingCacheTagsProvid
     this.keyPrefix = keyPrefix ?? '';
   }
 
+  /**
+   * Internal logger to capture race conditions for debugging.
+   * Entries are stored in a Redis list 'debug_logs'.
+   */
+  private async logEvent(event: string, details: Record<string, unknown>) {
+    try {
+      const entry = JSON.stringify({
+        timestamp: new Date().toISOString(),
+        event,
+        ...details,
+      });
+      await this.redis.lpush('debug_logs', entry);
+      await this.redis.ltrim('debug_logs', 0, 499);
+      console.info(`[Dato-Debug] ${event}: ${entry}`);
+    } catch (error) {
+      console.error('[Dato-Debug] Failed to log event:', error);
+    }
+  }
+
   public async storeQueryCacheTags(queryId: string, cacheTags: CacheTag[]) {
     return this.wrap(
       'storeQueryCacheTags',
@@ -41,6 +60,9 @@ export class RedisCacheTagsProvider extends AbstractErrorHandlingCacheTagsProvid
         if (!cacheTags?.length) {
           return;
         }
+
+        // Log the moment the write starts to compare against webhook arrival
+        await this.logEvent('REDIS_WRITE_START', { queryId, cacheTags });
 
         const pipeline = this.redis.pipeline();
 
@@ -53,47 +75,51 @@ export class RedisCacheTagsProvider extends AbstractErrorHandlingCacheTagsProvid
         if (error) {
           throw error;
         }
+
+        await this.logEvent('REDIS_WRITE_COMPLETE', { queryId });
       },
       undefined,
     );
   }
 
-  public async queriesReferencingCacheTags(cacheTags: CacheTag[]) {
+  /**
+   * Retrieves query IDs associated with the given cache tags.
+   * Includes a retry mechanism to handle race conditions where the webhook
+   * arrives before the mapping write has completed.
+   */
+  public async queriesReferencingCacheTags(cacheTags: CacheTag[], attempt = 1): Promise<string[]> {
     return this.wrap(
       'queriesReferencingCacheTags',
       [cacheTags],
       async () => {
-        return this.queriesReferencingCacheTagsWithRetry(cacheTags);
+        if (!cacheTags?.length) {
+          return [];
+        }
+
+        const keys = cacheTags.map((tag) => `${this.keyPrefix}${tag}`);
+        const result = await this.redis.sunion(...keys);
+
+        // If no mappings found, wait 500ms and try one more time (Total 2 attempts).
+        if (result.length === 0 && attempt < 2) {
+          await this.logEvent('WEBHOOK_EMPTY_RETRYING', { cacheTags, attempt });
+
+          await new Promise((resolve) => setTimeout(resolve, 500));
+
+          // Re-call the method with the incremented attempt counter
+          return this.queriesReferencingCacheTags(cacheTags, attempt + 1);
+        }
+
+        // If we succeeded on a retry, log it so we can prove the race condition to Marcelo
+        if (attempt > 1) {
+          await this.logEvent(result.length > 0 ? 'RETRY_SUCCESS' : 'RETRY_FAILED', {
+            queryCount: result.length,
+          });
+        }
+
+        return result;
       },
       [],
     );
-  }
-
-  /**
-   * Retrieves query IDs that reference the given cache tags with retry logic to handle race conditions.
-   * If no IDs are found on the first attempt, waits 500ms and retries once to allow time for
-   * concurrent write operations to complete.
-   *
-   * @param cacheTags Array of cache tags to check
-   * @param attempt Current attempt number (internal parameter)
-   * @returns Array of unique query IDs
-   */
-  private async queriesReferencingCacheTagsWithRetry(cacheTags: CacheTag[], attempt = 1): Promise<string[]> {
-    if (!cacheTags?.length) {
-      return [];
-    }
-
-    const keys = cacheTags.map((tag) => `${this.keyPrefix}${tag}`);
-    const queryIds = await this.redis.sunion(...keys);
-
-    // If no IDs found and it's our first try, wait 500ms and try again
-    if (queryIds.length === 0 && attempt < 2) {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      return this.queriesReferencingCacheTagsWithRetry(cacheTags, attempt + 1);
-    }
-
-    return queryIds;
   }
 
   public async deleteCacheTags(cacheTags: CacheTag[]) {
