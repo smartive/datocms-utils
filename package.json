@@ -55,7 +55,7 @@
     "@smartive/prettier-config": "3.1.2",
     "@types/node": "24.12.2",
     "@types/pg": "8.16.0",
-    "eslint": "9.39.4",
+    "eslint": "10.2.0",
     "eslint-import-resolver-typescript": "4.4.4",
     "graphql": "16.13.2",
     "ioredis": "5.10.1",
