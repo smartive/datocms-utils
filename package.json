@@ -57,7 +57,7 @@
     "@types/pg": "8.20.0",
     "eslint": "9.39.4",
     "eslint-import-resolver-typescript": "4.4.5",
-    "graphql": "16.14.1",
+    "graphql": "16.14.2",
     "ioredis": "5.11.1",
     "prettier": "3.8.3",
     "rimraf": "6.1.3",
